@@ -1,0 +1,28 @@
+{
+  "component": {
+    "tabs": {
+      "license": {
+        "index": "授权管理"
+      }
+    },
+    "user": {
+      "profile": {
+        "avatar_url": "头像URL",
+        "avatar_placeholder": "输入头像图片地址",
+        "nickname": "昵称",
+        "save_profile": "保存资料",
+        "change_pwd": "修改密码",
+        "new_pwd": "新密码",
+        "confirm_pwd": "确认密码",
+        "confirm_change": "确认修改"
+      },
+      "security_verify": {
+        "title": "身份验证",
+        "old_pwd": "原密码",
+        "old_pwd_placeholder": "请输入原密码",
+        "verify": "验证",
+        "no_security": "当前账号未绑定安全验证方式，将直接继续操作"
+      }
+    }
+  }
+}

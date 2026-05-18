@@ -1,0 +1,72 @@
+{
+  "common": {
+    "execlnosheet": "Excel文件中未找到任何工作表",
+    "nosheet": "工作表为空",
+    "importsuccess": "导入成功,新增%d条,更新%d条",
+    "export": "导出",
+    "msg": {
+      "success": "操作成功"
+    },
+    "user": {
+      "usernamepwderr": "用户名或密码错误",
+      "usernotenabled": "用户已被禁用",
+      "usernoauths": "用户无权限访问",
+      "notlogin": "未登录",
+      "phonenotbound": "用户未绑定手机号",
+      "emailnotbound": "用户未绑定邮箱",
+      "parammissing": "参数不完整",
+      "nofieldtoupdate": "没有需要更新的字段",
+      "oldpwdempty": "旧密码不能为空",
+      "newpwdempty": "新密码不能为空",
+      "pwderror": "密码错误",
+      "usernotfound": "用户不存在",
+      "otpnotbound": "用户未绑定OTP",
+      "otpverifyfail": "OTP验证失败",
+      "otpgenfail": "生成OTP失败",
+      "getuserinfofail": "获取用户信息失败",
+      "verifytokenempty": "验证token不能为空",
+      "verifytokeninvalid": "验证token无效或已过期",
+      "otpconfirmfail": "OTP验证失败，请确认扫码正确"
+    },
+    "websettings": {
+      "getfailed": "获取网站设置失败"
+    },
+    "stream": {
+      "unsupported": "当前环境不支持流式传输"
+    },
+    "param": {
+      "invalid": "请求参数不正确"
+    },
+    "config": {
+      "empty": "当前配置为空"
+    },
+    "distributed": {
+      "editionunsupported": "当前版本不支持分布式模式",
+      "savebaserequired": "请先保存并重启数据库、缓存、队列配置后再开启分布式模式",
+      "databaseunsupported": "当前数据库不支持分布式模式",
+      "cacheunsupported": "当前缓存不支持分布式模式",
+      "queueunsupported": "当前队列不支持分布式模式",
+      "installrunning": "插件安装或升级正在进行中"
+    },
+    "progress": {
+      "preparing": "准备中",
+      "downloading": "下载中",
+      "installed": "安装完成",
+      "kernelrestarting": "内核升级已安装，正在重启"
+    },
+    "appstore": {
+      "pluginmanagernotfound": "未找到插件管理器"
+    },
+    "kernel": {
+      "versionrequired": "版本不能为空"
+    },
+    "plugin": {
+      "loginrequired": "当前访问需要用户登录",
+      "disabled": "插件%s未启用",
+      "typeinvalid": "插件%s类型错误",
+      "allocateportfailed": "分配端口失败",
+      "starttimeout": "插件%s启动超时",
+      "startfailedornotfound": "插件%s启动失败或不存在"
+    }
+  }
+}

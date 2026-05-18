@@ -1,0 +1,114 @@
+/*公共部分*/
+* {
+  @apply m-0 p-0;
+}
+
+html,
+body,
+#app {
+  @apply h-full overflow-hidden;
+}
+
+/*灰度/哀悼模式*/
+.mourning {
+  filter: grayscale(100%);
+  -webkit-filter: grayscale(100%);
+  -moz-filter: grayscale(100%);
+  -ms-filter: grayscale(100%);
+  -o-filter: grayscale(100%);
+}
+
+/*禁止选中*/
+.disable-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #bbbbbb40;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bbbbbb40;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #bbbbbb40 transparent;
+}
+
+
+.n-input.n-input--disabled .n-input__input-el,
+.n-input.n-input--disabled .n-input__textarea-el,
+.n-input.n-input--disabled,
+.n-base-selection.n-base-selection--disabled .n-base-selection-label,
+.n-tag.n-tag--disabled,
+.n-base-close.n-base-close--disabled,
+.n-button.n-button--disabled,
+.n-base-selection.n-base-selection--disabled
+  .n-base-selection-label
+  .n-base-selection-input,
+.n-switch.n-switch--disabled .n-switch__rail,
+.n-checkbox.n-checkbox--disabled,
+.n-radio.n-radio--disabled,
+.n-radio-group .n-radio-button.n-radio-button--disabled,
+.n-color-picker-trigger.n-color-picker-trigger--disabled,
+.n-slider.n-slider--disabled,
+.n-slider.n-slider--disabled .n-slider-handle,
+.n-transfer
+  .n-transfer-list
+  .n-transfer-list-body
+  .n-transfer-list-flex-container
+  .n-transfer-list-content
+  .n-transfer-list-item.n-transfer-list-item--disabled,
+.n-base-selection--disabled .n-base-suffix {
+  cursor: default !important;
+}
+
+
+button.n-button,
+[type="button"].n-button,
+[type="reset"].n-button,
+[type="submit"].n-button {
+  background-color: var(--n-color) !important;
+}
+
+.v9os-desktop-root .n-card,
+.v9os-desktop-root .n-table,
+.v9os-desktop-root .n-layout-sider,
+.v9os-desktop-root .n-layout,
+.v9os-desktop-root .n-data-table .n-data-table-th,
+.v9os-desktop-root .n-data-table .n-data-table-thead,
+.v9os-desktop-root .n-data-table .n-data-table-table,
+.v9os-desktop-root .n-data-table .n-data-table-tbody,
+.v9os-desktop-root .n-data-table .n-data-table-tr,
+.v9os-desktop-root .n-data-table .n-data-table-td {
+  background-color: var(--user-bg-filter-color) !important;
+}
+
+.v9os-desktop-root .n-input,
+.v9os-desktop-root .n-base-selection-label,
+.v9os-desktop-root .n-base-selection-tags,
+.v9os-desktop-root .n-tag,
+.v-binder-follower-container .n-scrollbar {
+  background-color: var(--user-control-color) !important;
+}
+
+.v9os-glass-layer {
+  background: var(--user-glass-tint-color, rgba(255, 255, 255, 0.3));
+  backdrop-filter: blur(var(--user-glass-blur, 3px));
+  -webkit-backdrop-filter: blur(var(--user-glass-blur, 3px));
+}
+
+.v9os-glass-surface {
+  backdrop-filter: blur(var(--user-glass-blur, 3px));
+  -webkit-backdrop-filter: blur(var(--user-glass-blur, 3px));
+}

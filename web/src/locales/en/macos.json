@@ -1,0 +1,30 @@
+{
+  "macos": {
+    "about": {
+      "title": "About"
+    },
+    "settings": {
+      "title": "Settings"
+    },
+    "app": {
+      "launchpad": "Launchpad"
+    },
+    "controlCenter": {
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode",
+      "clickToSwitch": "Click to switch",
+      "eyeCare": "Eye Care",
+      "on": "On",
+      "off": "Off",
+      "enterFullscreen": "Enter Fullscreen",
+      "exitFullscreen": "Exit Fullscreen",
+      "display": "Display",
+      "sound": "Sound",
+      "uiMode": {
+        "windows": "Windows",
+        "linux": "Linux",
+        "pad": "Pad"
+      }
+    }
+  }
+}

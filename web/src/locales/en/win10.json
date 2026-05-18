@@ -1,0 +1,22 @@
+{
+  "win10": {
+    "startMenu": {
+      "user": {
+        "profile": "Me",
+        "accountSettings": "Change account settings",
+        "logout": "Log out"
+      },
+      "actions": {
+        "settings": "Settings",
+        "power": "Power"
+      },
+      "sections": {
+        "allApps": "All apps",
+        "myApps": "My apps"
+      },
+      "tips": {
+        "pinToMyApps": "Right-click an app on the left to pin it to My apps"
+      }
+    }
+  }
+}

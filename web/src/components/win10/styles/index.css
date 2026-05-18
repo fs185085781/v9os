@@ -1,0 +1,185 @@
+.win10-desktop-icons {
+  max-height: calc(100vh - 2.5rem);
+}
+
+.win10-desktop-icon {
+  @apply user-rounded-1.5;
+  align-items: center;
+  background: transparent;
+  color: #fff;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  height: 82px;
+  justify-content: center;
+  padding: 4px;
+  text-align: center;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
+  width: 76px;
+}
+
+.win10-desktop-icon:hover,
+.win10-desktop-icon:focus {
+  background: rgba(255, 255, 255, 0.18);
+  outline: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.win10-window {
+  height: 100%;
+  width: 100%;
+}
+
+.win10-window-bar {
+  box-shadow: inset 0 -1px rgba(0, 0, 0, 0.08);
+}
+
+.win10-window-btn {
+  align-items: center;
+  color: var(--user-text-color);
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease;
+  width: 46px;
+}
+
+.win10-window-btn:hover {
+  background: color-mix(in srgb, var(--user-text-color) 12%, transparent);
+}
+
+.win10-window-btn.close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+.win10-inner-window {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.win10-taskbar {
+  backdrop-filter: blur(30px);
+  background: color-mix(in srgb, var(--user-bg-color) 52%, transparent);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--user-text-color) 30%, transparent);
+  color: var(--user-text-color);
+}
+
+.win10-taskbar-btn,
+.win10-taskbar-app {
+  @apply user-rounded-1.5;
+  align-items: center;
+  cursor: default;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  position: relative;
+  transition: background 0.12s ease;
+}
+
+.win10-taskbar-btn:hover,
+.win10-taskbar-app:hover,
+.win10-taskbar-tray-item:hover {
+  background: color-mix(in srgb, var(--user-text-color) 12%, transparent);
+}
+
+.win10-taskbar-app {
+  width: 48px;
+}
+
+.win10-taskbar-app::after {
+  background: color-mix(in srgb, var(--user-text-color) 78%, transparent);
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 9px;
+  position: absolute;
+  right: 9px;
+}
+
+.win10-taskbar-app.active {
+  background: color-mix(in srgb, var(--user-text-color) 18%, transparent);
+}
+
+.win10-taskbar-app.active::after {
+  background: var(--user-primary-color);
+  left: 4px;
+  right: 4px;
+}
+
+.win10-clock {
+  min-width: 96px;
+}
+
+.win10-battery-level-normal {
+  background: var(--user-text-color);
+}
+
+.win10-start-side-btn {
+  @apply user-rounded-2;
+  align-items: center;
+  color: #f3f4f6;
+  cursor: default;
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 48px;
+}
+
+.win10-start-side-btn:hover,
+.win10-start-app:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.win10-user-menu {
+  @apply user-rounded-2;
+  background: rgba(0, 0, 0, 0.88);
+  bottom: 44px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.32);
+  color: #f3f4f6;
+  left: 0;
+  min-width: 168px;
+  padding: 4px 0;
+  position: absolute;
+}
+
+.win10-user-menu-item {
+  @apply user-rounded-1.5;
+  cursor: default;
+  display: block;
+  font-size: 13px;
+  line-height: 34px;
+  padding: 0 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.win10-user-menu-item:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.win10-start-app {
+  @apply user-rounded-2;
+  align-items: center;
+  cursor: default;
+  display: flex;
+  gap: 8px;
+  min-height: 40px;
+  padding: 7px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.win10-start-tile {
+  @apply user-rounded-2;
+  background: #0078d7;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  height: 96px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.win10-start-tile:hover {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: -2px;
+}

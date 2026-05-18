@@ -1,0 +1,42 @@
+{
+  "name": "v9os-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "core-js": "^3.49.0",
+    "dompurify": "^3.2.7",
+    "lodash": "^4.17.21",
+    "mitt": "^3.0.1",
+    "pinia": "^3.0.3",
+    "qrcode": "^1.5.4",
+    "unocss": "^66.5.0",
+    "vue": "^3.5.18",
+    "vue-fluid-dnd": "^0.14.4",
+    "vue-simple-uploader": "^0.7.6",
+    "vue3-draggable-resizable": "^1.6.5"
+  },
+  "devDependencies": {
+    "@vicons/antd": "^0.13.0",
+    "@vicons/carbon": "^0.13.0",
+    "@vicons/fa": "^0.13.0",
+    "@vicons/fluent": "^0.13.0",
+    "@vicons/ionicons4": "^0.13.0",
+    "@vicons/ionicons5": "^0.13.0",
+    "@vicons/material": "^0.13.0",
+    "@vicons/tabler": "^0.13.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "naive-ui": "^2.42.0",
+    "vfonts": "^0.0.3",
+    "vite": "^7.0.6",
+    "vite-plugin-vue-devtools": "^8.0.0"
+  }
+}

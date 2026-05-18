@@ -1,0 +1,25 @@
+{
+  "admin": {
+    "title": "数据管理",
+    "table": {
+      "model": "表",
+      "table": "数据库管理"
+    },
+    "system": {
+      "base":"基础表",
+      "websettings": "网站设置",
+      "plugin": "插件管理",
+      "user": "用户管理",
+      "dockapp":"收藏应用",
+      "allapp":"全部应用",
+      "distributed": "分布式管理",
+      "local_billing": "会员管理",
+      "official_license": "商业授权"
+    },
+    "component": {
+      "license": {
+        "license": "插件授权"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "contextMenu": {
+    "common": {
+      "refresh": "Refresh",
+      "personalize": "Personalize",
+      "open": "Open",
+      "copy": "Copy",
+      "paste": "Paste",
+      "create": "New",
+      "addToMyApps": "Add to My Apps",
+      "removeFromMyApps": "Remove from My Apps",
+      "addToDock": "Add to Dock",
+      "removeFromDock": "Remove from Dock"
+    }
+  }
+}

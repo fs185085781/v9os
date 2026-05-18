@@ -1,0 +1,53 @@
+<script setup>
+import { NForm, NFormItem, NInput, NButton,NSelect,NDatePicker,NGrid,NGridItem } from 'naive-ui'
+import { windowsStore } from "@/stores/windows"
+import { computed } from "vue";
+import { postData } from "@/util/util";
+const props = defineProps({
+    data: {
+    },
+    winId: {
+        type: String,
+        default: ""
+    }
+})
+const row = props.data
+const winId = props.winId
+const ws = windowsStore()
+import emitter from '@/util/event.js';
+const save = async () => {
+    const res = await postData("[[.LowerName]]","save",row)
+    if(res){
+        ws.closeWindow(winId)
+        emitter.emit("[[.LowerName]]-edit-over", {})
+    }
+}[[range .Fields]]
+[[- $fieldLowerName := .FieldLowerName -]]
+[[if eq .FieldType "select"]]
+const [[.FieldLowerName]]Options = computed(() => [
+    [[range $key, $value := .Select]]{
+        label: $t("model.[[$.LowerName]].[[$fieldLowerName]]_select_[[$key]]"),
+        value: "[[$key]]"
+    },[[end]]
+])[[end]][[end]]
+</script>
+<template>
+    <n-form
+    :model="row"
+    label-placement="left"
+    label-width="auto"
+    require-mark-placement="right-hanging"
+    size="small"
+    class="w-full p-5"
+  ><n-grid cols="0:1 800:2 1200:3 1600:4 2000:5 2400:6" :x-gap="12">[[range .Fields]][[if .IsNormal]]<n-grid-item><n-form-item :label="$t('[[.LangKey]]')" path="[[.FieldName]]">
+      [[if eq .FieldType "input"]]<n-input v-model:value="row.[[.FieldName]]" :placeholder="$t('[[.LangKey]]')" />[[end]][[if eq .FieldType "textarea"]]<n-input type="textarea" v-model:value="row.[[.FieldName]]" :placeholder="$t('[[.LangKey]]')" />[[end]][[if eq .FieldType "select"]]<n-select v-model:value="row.[[.FieldName]]" :options="[[.FieldLowerName]]Options" />[[end]][[if eq .FieldType "datetime"]]<n-date-picker class="w-full" v-model:value="row.[[.FieldName]]" type="datetime" clearable />[[end]]
+    </n-form-item></n-grid-item>
+    [[end]][[end]]
+  </n-grid>
+  <div class="flex justify-end">
+      <n-button type="primary" @click="save()" size="small">
+        {{ $t("common.all.save") }}
+      </n-button>
+  </div>
+  </n-form>
+</template>

@@ -1,0 +1,30 @@
+{
+  "macos": {
+    "about": {
+      "title": "关于"
+    },
+    "settings": {
+      "title": "设置"
+    },
+    "app": {
+      "launchpad": "启动台"
+    },
+    "controlCenter": {
+      "lightMode": "浅色模式",
+      "darkMode": "深色模式",
+      "clickToSwitch": "点击切换",
+      "eyeCare": "护眼模式",
+      "on": "开启",
+      "off": "关闭",
+      "enterFullscreen": "进入全屏",
+      "exitFullscreen": "退出全屏",
+      "display": "显示器",
+      "sound": "声音",
+      "uiMode": {
+        "windows": "Windows",
+        "linux": "Linux",
+        "pad": "Pad"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "backend": {
+    "layout": {
+      "profile": "个人中心",
+      "settings": "个性化",
+      "logout": "退出登录"
+    }
+  }
+}

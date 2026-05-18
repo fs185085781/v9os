@@ -1,0 +1,22 @@
+{
+  "win10": {
+    "startMenu": {
+      "user": {
+        "profile": "我的",
+        "accountSettings": "更改账户设置",
+        "logout": "注销"
+      },
+      "actions": {
+        "settings": "设置",
+        "power": "电源"
+      },
+      "sections": {
+        "allApps": "全部功能",
+        "myApps": "我的应用"
+      },
+      "tips": {
+        "pinToMyApps": "右键左侧应用可固定到我的应用"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "backend": {
+    "layout": {
+      "profile": "Profile",
+      "settings": "Personalization",
+      "logout": "Logout"
+    }
+  }
+}

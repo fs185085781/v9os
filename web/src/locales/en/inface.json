@@ -1,0 +1,294 @@
+{
+  "inface": {
+    "user_ee": {
+      "tabs": {
+        "user": "User Management",
+        "dept": "Department Management",
+        "role": "Role Management",
+        "auth": "Permission Management",
+        "config": "Configuration Management"
+      },
+      "common": {
+        "assign_roles": "Assign Roles",
+        "assign_users": "Assign Users",
+        "assign_auths": "Assign Permissions",
+        "title_assign_roles": "Assign Roles",
+        "title_assign_users": "Assign Users",
+        "title_assign_auths": "Assign Permissions",
+        "search_auth": "Search permissions",
+        "expand_all": "Expand All",
+        "collapse_all": "Collapse All",
+        "select_parent_dept": "Select parent department",
+        "password_keep_empty": "Leave empty to keep unchanged",
+        "source_kernel": "Kernel",
+        "source_plugin": "Plugin",
+        "unknown_plugin": "Unknown Plugin",
+        "unknown_feature": "Unknown Feature",
+        "unknown_action": "Unknown Action",
+        "user_manager": "User Management"
+      },
+      "profile": {
+        "avatar_url": "Avatar URL",
+        "avatar_placeholder": "Enter avatar image URL",
+        "nickname": "Nickname",
+        "phone": "Phone",
+        "email": "Email",
+        "not_bound": "Not bound",
+        "bound": "Bound",
+        "change": "Change",
+        "bind": "Bind",
+        "rebind": "Rebind",
+        "save_profile": "Save Profile",
+        "change_pwd": "Change Password",
+        "pwd_mismatch": "Passwords do not match",
+        "pwd_empty": "New password cannot be empty",
+        "pwd_success": "Password changed successfully",
+        "set_new_pwd": "Set New Password",
+        "new_pwd": "New Password",
+        "confirm_pwd": "Confirm Password",
+        "confirm_change": "Confirm",
+        "bind_phone": "Bind Phone",
+        "change_phone": "Change Phone",
+        "bind_email": "Bind Email",
+        "change_email": "Change Email",
+        "bind_otp": "Bind OTP",
+        "bind_qq": "Bind QQ",
+        "bind_weixin": "Bind WeChat",
+        "input_phone": "Enter new phone number",
+        "input_email": "Enter new email",
+        "input_phone_first": "Please enter phone number first",
+        "input_email_first": "Please enter email first",
+        "verify_code": "Verify Code",
+        "input_code": "Enter verification code",
+        "send_code": "Send Code",
+        "resend": "Resend",
+        "code_sent": "Verification code sent",
+        "confirm_bind": "Confirm",
+        "bind_success": "Binding successful",
+        "otp_scan": "Scan the QR code below with your Authenticator app",
+        "otp_code": "OTP Code",
+        "otp_input": "Enter 6-digit code",
+        "qq": "QQ",
+        "weixin": "WeChat"
+      },
+      "security_verify": {
+        "title": "Verification",
+        "old_pwd": "Password",
+        "old_pwd_placeholder": "Enter your password",
+        "verify": "Verify",
+        "sms": "SMS Code ({phone})",
+        "email_code": "Email Code ({email})",
+        "otp": "OTP Code",
+        "step_method": "Select Method",
+        "step_code": "Enter Code",
+        "next": "Next",
+        "prev": "Back",
+        "input_code": "Enter code",
+        "input_otp": "Enter OTP code",
+        "send": "Send",
+        "phone": "SMS Code",
+        "email": "Email Code",
+        "code": "Code"
+      },
+      "bind_window": {
+        "email_label": "Email",
+        "phone_label": "Phone",
+        "confirm_bind": "Confirm",
+        "send": "Send",
+        "qq_auth_tip": "Click the button below to complete QQ authorization",
+        "qq_auth": "QQ Authorization",
+        "wx_auth_tip": "Click the button below to complete WeChat authorization",
+        "wx_auth": "WeChat Authorization"
+      },
+      "windows": {
+        "user_edit": {
+          "username": "Username",
+          "name": "Name",
+          "password": "Password",
+          "email": "Email",
+          "phone": "Phone",
+          "enabled": "Status",
+          "enabled_select_1": "Enabled",
+          "enabled_select_2": "Disabled"
+        },
+        "role_edit": {
+          "name": "Role Name",
+          "description": "Description",
+          "data_scope": "Data Scope",
+          "custom_dept_ids": "Custom Department IDs",
+          "data_scope_select_1": "All Data",
+          "data_scope_select_2": "This Department",
+          "data_scope_select_3": "This & Sub Departments",
+          "data_scope_select_4": "Only My Data",
+          "data_scope_select_5": "Custom Data"
+        }
+      },
+      "config": {
+        "tabs": {
+          "sms_config": "SMS Config",
+          "email_config": "Email Config",
+          "sms_template": "SMS Template",
+          "email_template": "Email Template",
+          "login_config": "Login Config",
+          "reg_config": "Registration Config",
+          "qq_login": "QQ Login",
+          "weixin_login": "WeChat Login"
+        },
+        "table": {
+          "name": "Name",
+          "status": "Status",
+          "actions": "Actions",
+          "enabled": "Enabled",
+          "disabled": "Disabled",
+          "edit": "Edit",
+          "delete": "Delete",
+          "confirm_delete": "Confirm delete?"
+        },
+        "buttons": {
+          "add": "Add",
+          "save": "Save",
+          "add_config": "Add Config",
+          "edit_config": "Edit Config"
+        },
+        "login": {
+          "username_password": "Username & Password Login",
+          "phone_code": "Phone Code Login",
+          "email_code": "Email Code Login",
+          "otp": "OTP Login",
+          "qq": "QQ Login",
+          "weixin": "WeChat Login"
+        },
+        "register": {
+          "method": "Registration Method",
+          "disabled": "Disabled",
+          "username_only": "Username Only",
+          "phone_only": "Phone Only",
+          "email_only": "Email Only",
+          "phone_or_email": "Phone or Email"
+        }
+      }
+    },
+    "local_billing_ee": {
+      "tabs": {
+        "config": "Billing Config",
+        "price": "Price Management",
+        "order": "Order Management",
+        "member": "Member Management",
+        "member_info": "Member Info"
+      }
+    },
+    "official_license_ee": {
+      "tabs": {
+        "index": "License Management"
+      },
+      "title": "Official License",
+      "refresh": "Refresh",
+      "sync": "Update License",
+      "abandon": "Abandon License",
+      "abandon_warning": "Abandon the local license? The current license will be removed from this node. To restore it, import a latest license exported manually from the store.",
+      "buy": "Buy More",
+      "buy_license": "Buy License",
+      "purchase_window_title": "Buy License",
+      "loading_products": "Loading products...",
+      "pay": "Buy and Pay",
+      "pay_selected": "Pay Selected",
+      "coupon_placeholder": "Coupon code",
+      "coupon_tip": "Coupons are applied directly during payment.",
+      "select": "Select",
+      "selected": "Selected",
+      "price_group": "Price Group",
+      "quantity_input": "Quantity",
+        "duration_input": "Duration",
+        "offline_grace": "Offline Grace (Months)",
+        "offline_forever": "Lifetime",
+        "offline_locked_tip": "Offline grace must match the current license when buying more items",
+        "unit_price": "Unit Price",
+      "line_total": "Subtotal",
+      "selected_total": "Total",
+      "payment_title": "Scan to Pay",
+      "payment_pending": "Waiting for Payment",
+      "payment_paid": "Payment Completed",
+      "pay_id": "Payment ID",
+      "force_submit_title": "Force Submit Order",
+      "force_submit_tip": "Old license validation failed",
+      "force_submit_warning": "Force submit? The order will be renewed based on the submitted old license, and a new license will be issued after payment.",
+      "open_pay_url": "Open Payment Link",
+      "no_license": "No valid official license is installed",
+      "all_commercial": "All commercial licenses are available",
+      "units": {
+        "forever": "Lifetime",
+        "year": "Year",
+        "month": "Month",
+        "day": "Day",
+        "times": "Quantity"
+      },
+      "sections": {
+        "license_info": "License Info",
+        "current_projects": "Current Licensed Projects",
+        "buy_more": "Buy More License Items"
+      },
+      "metrics": {
+        "projects": "Projects",
+        "days_left": "Days Left",
+        "next_sync": "Next Auto Update",
+        "renew_at": "Auto Update Point"
+      },
+      "fields": {
+        "auth_id": "Auth ID",
+        "valid_time": "Valid Time",
+        "last_sync": "Last Sync",
+        "sync_error": "Sync Error",
+        "quantity": "Quantity",
+        "duration": "Duration",
+        "days": " days"
+      },
+      "table": {
+        "project": "Project",
+        "project_name": "Project Name",
+        "auth_type": "Auth Type",
+        "quantity": "Quantity",
+        "expired_at": "Expires At",
+        "cipher": "Cipher",
+        "status": "Status"
+      },
+      "auth_types": {
+        "expired": "By Expiration",
+        "times": "By Quantity",
+        "has": "Feature License"
+      },
+      "status": {
+        "authorized": "Authorized",
+        "unauthorized": "Unauthorized",
+        "valid": "Valid",
+        "expired": "Expired",
+        "disabled": "Disabled"
+      }
+    },
+    "distributed_ee":{
+      "tabs":{
+        "machine":"Machine Management"
+      },
+      "localApp": {
+        "installLocalApp": "Install Local App",
+        "uploadLocalApp": "Upload Local App",
+        "selectedMachines": "Selected Machines",
+        "selectMachineRequired": "Please select machines",
+        "thirdPartySingleMachine": "Third-party plugins can only target one machine",
+        "osArchRequired": "Please select OS and architecture",
+        "osArchMismatch": "The selected machines do not match the chosen OS or architecture",
+        "os": "OS",
+        "arch": "Architecture",
+        "appType": "App Type",
+        "localPackage": "Local Package",
+        "selectPackage": "Select Package",
+        "noFileSelected": "No file selected",
+        "packageRequired": "Please select a package",
+        "pluginTypes": {
+          "main": "Main Plugin",
+          "frontend": "Frontend Plugin",
+          "thirdParty": "Third-party Plugin"
+        }
+      }
+    }
+  }
+}

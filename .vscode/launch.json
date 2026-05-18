@@ -1,0 +1,48 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Debug V9OS",
+      "configurations": ["V9os Server Debug", "V9os Web Debug"]
+    },
+  ],
+  "configurations": [
+    {
+      "name": "V9os Server Debug",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/api/cmd/console/main.go",
+      "console": "integratedTerminal",
+      "output": "${workspaceFolder}/api/bin/console.exe"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "V9os Web Debug",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}/web"
+    },
+    {
+      "name": "v9os Code",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/util/template/code.go",
+      "console": "integratedTerminal",
+      "output": "${workspaceFolder}/util/code.exe"
+    },
+    {
+      "name": "V9os Build",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/util/build.go",
+      "console": "integratedTerminal",
+      "output": "${workspaceFolder}/util/build.exe"
+    }
+  ]
+}

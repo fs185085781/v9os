@@ -1,0 +1,294 @@
+{
+  "inface": {
+    "user_ee": {
+      "tabs": {
+        "user": "用户管理",
+        "dept": "部门管理",
+        "role": "角色管理",
+        "auth": "权限管理",
+        "config": "配置管理"
+      },
+      "common": {
+        "assign_roles": "分配角色",
+        "assign_users": "分配用户",
+        "assign_auths": "分配权限",
+        "title_assign_roles": "分配角色",
+        "title_assign_users": "分配用户",
+        "title_assign_auths": "分配权限",
+        "search_auth": "搜索权限",
+        "expand_all": "展开所有",
+        "collapse_all": "折叠所有",
+        "select_parent_dept": "请选择上级部门",
+        "password_keep_empty": "留空不修改",
+        "source_kernel": "内核",
+        "source_plugin": "插件",
+        "unknown_plugin": "未知插件",
+        "unknown_feature": "未知功能",
+        "unknown_action": "未知行为",
+        "user_manager": "用户管理"
+      },
+      "profile": {
+        "avatar_url": "头像URL",
+        "avatar_placeholder": "输入头像图片地址",
+        "nickname": "昵称",
+        "phone": "手机号",
+        "email": "邮箱",
+        "not_bound": "未绑定",
+        "bound": "已绑定",
+        "change": "更换",
+        "bind": "绑定",
+        "rebind": "重新绑定",
+        "save_profile": "保存资料",
+        "change_pwd": "修改密码",
+        "pwd_mismatch": "两次密码不一致",
+        "pwd_empty": "新密码不能为空",
+        "pwd_success": "密码修改成功",
+        "set_new_pwd": "设置新密码",
+        "new_pwd": "新密码",
+        "confirm_pwd": "确认密码",
+        "confirm_change": "确认修改",
+        "bind_phone": "绑定手机号",
+        "change_phone": "更换手机号",
+        "bind_email": "绑定邮箱",
+        "change_email": "更换邮箱",
+        "bind_otp": "绑定OTP",
+        "bind_qq": "绑定QQ",
+        "bind_weixin": "绑定微信",
+        "input_phone": "输入新手机号",
+        "input_email": "输入新邮箱",
+        "input_phone_first": "请先输入手机号",
+        "input_email_first": "请先输入邮箱",
+        "verify_code": "验证码",
+        "input_code": "输入验证码",
+        "send_code": "发送验证码",
+        "resend": "重新发送",
+        "code_sent": "验证码已发送",
+        "confirm_bind": "确认绑定",
+        "bind_success": "绑定成功",
+        "otp_scan": "请使用 Authenticator 应用扫描下方二维码",
+        "otp_code": "OTP码",
+        "otp_input": "输入6位动态码",
+        "qq": "QQ",
+        "weixin": "微信"
+      },
+      "security_verify": {
+        "title": "身份验证",
+        "old_pwd": "原密码",
+        "old_pwd_placeholder": "请输入原密码",
+        "verify": "验证",
+        "sms": "手机验证码 ({phone})",
+        "email_code": "邮箱验证码 ({email})",
+        "otp": "OTP动态码",
+        "step_method": "选择验证方式",
+        "step_code": "输入验证码",
+        "next": "下一步",
+        "prev": "上一步",
+        "input_code": "输入验证码",
+        "input_otp": "输入动态码",
+        "send": "发送",
+        "phone": "手机验证码",
+        "email": "邮箱验证码",
+        "code": "验证码"
+      },
+      "bind_window": {
+        "email_label": "邮箱",
+        "phone_label": "手机号",
+        "confirm_bind": "确认绑定",
+        "send": "发送",
+        "qq_auth_tip": "点击下方按钮完成QQ授权",
+        "qq_auth": "QQ授权",
+        "wx_auth_tip": "点击下方按钮完成微信授权",
+        "wx_auth": "微信授权"
+      },
+      "windows": {
+        "user_edit": {
+          "username": "用户名",
+          "name": "姓名",
+          "password": "密码",
+          "email": "邮箱",
+          "phone": "手机号",
+          "enabled": "状态",
+          "enabled_select_1": "启用",
+          "enabled_select_2": "禁用"
+        },
+        "role_edit": {
+          "name": "角色名称",
+          "description": "描述",
+          "data_scope": "数据权限",
+          "custom_dept_ids": "自定义部门ID",
+          "data_scope_select_1": "全部数据",
+          "data_scope_select_2": "本部门数据",
+          "data_scope_select_3": "本部门及子部门数据",
+          "data_scope_select_4": "仅本人数据",
+          "data_scope_select_5": "自定义数据"
+        }
+      },
+      "config": {
+        "tabs": {
+          "sms_config": "短信配置",
+          "email_config": "邮件配置",
+          "sms_template": "短信模板",
+          "email_template": "邮件模板",
+          "login_config": "登录配置",
+          "reg_config": "注册配置",
+          "qq_login": "QQ登录",
+          "weixin_login": "微信登录"
+        },
+        "table": {
+          "name": "名称",
+          "status": "状态",
+          "actions": "操作",
+          "enabled": "启用",
+          "disabled": "禁用",
+          "edit": "编辑",
+          "delete": "删除",
+          "confirm_delete": "确认删除?"
+        },
+        "buttons": {
+          "add": "新增",
+          "save": "保存",
+          "add_config": "新增配置",
+          "edit_config": "编辑配置"
+        },
+        "login": {
+          "username_password": "用户名密码登录",
+          "phone_code": "手机验证码登录",
+          "email_code": "邮箱验证码登录",
+          "otp": "OTP登录",
+          "qq": "QQ登录",
+          "weixin": "微信登录"
+        },
+        "register": {
+          "method": "注册方式",
+          "disabled": "禁用",
+          "username_only": "仅用户名",
+          "phone_only": "仅手机号",
+          "email_only": "仅邮箱",
+          "phone_or_email": "手机号或邮箱"
+        }
+      }
+    },
+    "local_billing_ee": {
+      "tabs": {
+        "config": "付费配置",
+        "price": "价格管理",
+        "order": "订单管理",
+        "member": "会员管理",
+        "member_info": "会员信息"
+      }
+    },
+    "official_license_ee": {
+      "tabs": {
+        "index": "授权管理"
+        },
+        "title": "商业授权",
+        "refresh": "刷新",
+        "sync": "更新授权",
+        "abandon": "放弃授权",
+        "abandon_warning": "确认放弃本地授权？放弃后当前授权会从本机移除，如需恢复请联系人工导出最新授权后再导入。",
+        "buy": "继续购买",
+        "buy_license": "购买授权",
+        "purchase_window_title": "购买授权",
+        "loading_products": "正在加载商品...",
+        "pay": "购买并支付",
+        "pay_selected": "合并支付",
+        "coupon_placeholder": "代金券",
+        "coupon_tip": "如有代金券，支付时会直接抵扣。",
+        "select": "选择",
+        "selected": "已选择",
+        "price_group": "价格组",
+        "quantity_input": "购买数量",
+        "duration_input": "购买时长",
+        "offline_grace": "离线宽限期(月)",
+        "offline_forever": "永久",
+        "offline_locked_tip": "继续购买时离线宽限期必须与当前授权一致",
+        "unit_price": "单价",
+        "line_total": "小计",
+        "selected_total": "合计",
+        "payment_title": "扫码支付",
+        "payment_pending": "等待支付",
+        "payment_paid": "支付完成",
+        "pay_id": "支付ID",
+        "force_submit_title": "强制提交订单",
+        "force_submit_tip": "旧授权校验未通过",
+        "force_submit_warning": "是否强制提交？强制提交会按照当前提交的旧授权续期，支付后获得新的授权。",
+        "open_pay_url": "打开支付链接",
+        "no_license": "当前未安装有效商业授权",
+        "all_commercial": "当前已具备全部商业授权",
+        "units": {
+          "forever": "永久",
+          "year": "年",
+          "month": "月",
+          "day": "日",
+          "times": "数量"
+        },
+        "sections": {
+        "license_info": "授权信息",
+        "current_projects": "当前授权项目",
+        "buy_more": "继续购买新的授权内容"
+      },
+      "metrics": {
+        "projects": "授权项目",
+        "days_left": "剩余天数",
+        "next_sync": "下次自动更新",
+        "renew_at": "自动更新节点"
+      },
+      "fields": {
+        "auth_id": "授权ID",
+        "valid_time": "授权有效期",
+        "last_sync": "最近同步",
+        "sync_error": "同步错误",
+        "quantity": "数量",
+        "duration": "有效期",
+        "days": "天"
+      },
+      "table": {
+        "project": "授权项目",
+        "project_name": "项目名称",
+        "auth_type": "授权类型",
+        "quantity": "数量",
+        "expired_at": "到期时间",
+        "cipher": "密码串",
+        "status": "状态"
+      },
+      "auth_types": {
+        "expired": "按到期时间",
+        "times": "按数量",
+        "has": "功能授权"
+      },
+      "status": {
+        "authorized": "已授权",
+        "unauthorized": "未授权",
+        "valid": "有效",
+        "expired": "已过期",
+        "disabled": "已禁用"
+      }
+    },
+    "distributed_ee":{
+      "tabs":{
+        "machine":"机器管理"
+      },
+      "localApp": {
+        "installLocalApp": "安装本地应用",
+        "uploadLocalApp": "上传本地应用",
+        "selectedMachines": "已选择机器",
+        "selectMachineRequired": "请选择机器",
+        "thirdPartySingleMachine": "三方插件只能选择一台机器",
+        "osArchRequired": "请选择系统和架构",
+        "osArchMismatch": "所选机器的系统或架构与当前选择不一致",
+        "os": "系统",
+        "arch": "架构",
+        "appType": "应用类型",
+        "localPackage": "本地插件包",
+        "selectPackage": "选择插件包",
+        "noFileSelected": "未选择文件",
+        "packageRequired": "请选择插件包",
+        "pluginTypes": {
+          "main": "主程序插件",
+          "frontend": "前端插件",
+          "thirdParty": "三方插件"
+        }
+      }
+    }
+  }
+}

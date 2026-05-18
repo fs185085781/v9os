@@ -1,0 +1,28 @@
+{
+  "component": {
+    "tabs": {
+      "license": {
+        "index": "License Management"
+      }
+    },
+    "user": {
+      "profile": {
+        "avatar_url": "Avatar URL",
+        "avatar_placeholder": "Enter avatar image URL",
+        "nickname": "Nickname",
+        "save_profile": "Save Profile",
+        "change_pwd": "Change Password",
+        "new_pwd": "New Password",
+        "confirm_pwd": "Confirm Password",
+        "confirm_change": "Confirm"
+      },
+      "security_verify": {
+        "title": "Verification",
+        "old_pwd": "Password",
+        "old_pwd_placeholder": "Enter your password",
+        "verify": "Verify",
+        "no_security": "No security verification method is bound to this account. Continuing directly."
+      }
+    }
+  }
+}

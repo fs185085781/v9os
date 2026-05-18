@@ -1,0 +1,20 @@
+//加载vue
+import "core-js/stable";
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import App from "./App.vue";
+import i18n from "./locales";
+import authDirective from "./directives/auth.js";
+import contextMenuDirective from "./directives/contextMenu.js";
+import { useMsg } from "./util/msg.js";
+window.$msg = useMsg();
+const app = createApp(App);
+app.use(createPinia());
+app.use(i18n);
+app.directive("auth", authDirective);
+app.directive("context-menu", contextMenuDirective);
+app.mount("#app");
+import { useStore } from "./stores/user.js";
+app.config.globalProperties.$user = useStore();
+window.__INFACE_MODS__ = import.meta.glob(["@/components/common/inface/**/*.vue", "@/components/common/inface/**/*.js"]);
+window.__COMPONENT_MODS__ = import.meta.glob("@/components/common/component/**/*.vue");

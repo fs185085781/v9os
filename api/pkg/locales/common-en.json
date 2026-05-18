@@ -1,0 +1,72 @@
+{
+  "common": {
+    "execlnosheet": "No worksheet found in Excel file",
+    "nosheet": "Worksheet is empty",
+    "importsuccess": "Import successful, added %d, updated %d",
+    "export": "Export",
+    "msg": {
+      "success": "Operation successful"
+    },
+    "user": {
+      "usernamepwderr": "Username or password error",
+      "usernotenabled": "User is disabled",
+      "usernoauths": "User has no permissions",
+      "notlogin": "Not logged in",
+      "phonenotbound": "Phone not bound",
+      "emailnotbound": "Email not bound",
+      "parammissing": "Missing parameters",
+      "nofieldtoupdate": "No fields to update",
+      "oldpwdempty": "Old password is required",
+      "newpwdempty": "New password is required",
+      "pwderror": "Incorrect password",
+      "usernotfound": "User not found",
+      "otpnotbound": "OTP not bound",
+      "otpverifyfail": "OTP verification failed",
+      "otpgenfail": "Failed to generate OTP",
+      "getuserinfofail": "Failed to get user info",
+      "verifytokenempty": "Verify token is required",
+      "verifytokeninvalid": "Verify token invalid or expired",
+      "otpconfirmfail": "OTP verification failed, please confirm scan"
+    },
+    "websettings": {
+      "getfailed": "Failed to get website settings"
+    },
+    "stream": {
+      "unsupported": "Streaming is unsupported in the current environment"
+    },
+    "param": {
+      "invalid": "Invalid request parameters"
+    },
+    "config": {
+      "empty": "Current config is empty"
+    },
+    "distributed": {
+      "editionunsupported": "Current edition does not support distributed mode",
+      "savebaserequired": "Save and restart database, cache, and queue config changes before enabling distributed mode",
+      "databaseunsupported": "Current database does not support distributed mode",
+      "cacheunsupported": "Current cache does not support distributed mode",
+      "queueunsupported": "Current queue does not support distributed mode",
+      "installrunning": "Plugin install or upgrade is already running"
+    },
+    "progress": {
+      "preparing": "Preparing",
+      "downloading": "Downloading",
+      "installed": "Installed",
+      "kernelrestarting": "Kernel upgrade installed, restarting"
+    },
+    "appstore": {
+      "pluginmanagernotfound": "Plugin manager not found"
+    },
+    "kernel": {
+      "versionrequired": "Version is required"
+    },
+    "plugin": {
+      "loginrequired": "Login is required for current access",
+      "disabled": "Plugin %s is disabled",
+      "typeinvalid": "Plugin %s type is invalid",
+      "allocateportfailed": "Allocate port failed",
+      "starttimeout": "Plugin %s start timeout",
+      "startfailedornotfound": "Plugin %s start failed or not found"
+    }
+  }
+}

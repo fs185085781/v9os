@@ -1,0 +1,25 @@
+{
+  "admin": {
+    "title": "Data Management",
+    "table": {
+      "model": " Table",
+      "table": "Database Management"
+    },
+    "system": {
+      "base": "Base Table",
+      "websettings": "Website Settings",
+      "plugin": "Plugin Management",
+      "user": "User Management",
+      "dockapp":"Favorite Apps",
+      "allapp":"All Apps",
+      "distributed": "Distributed Management",
+      "local_billing": "Member Management",
+      "official_license": "Official License"
+    },
+    "component": {
+      "license": {
+        "license": "Plugin License"
+      }
+    }
+  }
+}
