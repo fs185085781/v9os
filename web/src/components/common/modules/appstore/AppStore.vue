@@ -14,10 +14,9 @@ import {
   NTag,
 } from "naive-ui";
 import { checkAuth } from "@/directives/auth";
-import { webhookStore } from "@/stores/webhook.js";
 import { useStore } from "@/stores/user.js";
 import { useEventBus } from "@/util/event.js";
-import { getApiHost, getWinSize, postData, postStreamData } from "@/util/util";
+import { getWinSize, postData, postStreamData,absoluteUrl } from "@/util/util";
 import AppStoreAdd from "./AppStoreAdd.vue";
 import AppStoreDetail from "./AppStoreDetail.vue";
 
@@ -29,7 +28,6 @@ const props = defineProps({
 });
 
 const user = useStore();
-const hooks = webhookStore();
 
 const categories = ref([]);
 const apps = ref([]);
@@ -105,6 +103,13 @@ const normalizePackages = (record) => {
   }));
 };
 
+const normalizeRuntime = (record = {}) => {
+  const runtime = record?.Runtime ?? record?.runtime ?? {};
+  return {
+    AccessUrl: getString(runtime, "AccessUrl", "accessUrl") || getString(record, "AccessUrl", "accessUrl"),
+  };
+};
+
 const normalizeApp = (record = {}) => ({
   ...record,
   Code: getString(record, "Code", "code"),
@@ -116,11 +121,11 @@ const normalizeApp = (record = {}) => ({
   InstalledVersion: getString(record, "InstalledVersion", "installedVersion"),
   Category: getString(record, "Category", "category"),
   PluginType: getNumber(record, "PluginType", "pluginType"),
-  AccessUrl: getString(record, "AccessUrl", "accessUrl"),
   LimitVersion: getString(record, "LimitVersion", "limitVersion"),
   Installable: normalizeInstallable(record),
   InstallReason: getString(record, "InstallReason", "installReason"),
   Installed: getBool(record, "Installed", "installed"),
+  Runtime: normalizeRuntime(record),
   Screenshots: normalizeScreenshots(record),
   Packages: normalizePackages(record),
 });
@@ -263,11 +268,10 @@ const loadInstalled = async () => {
     installedApps.value = [];
     return;
   }
-  const host = await getApiHost();
   const data = await postData("appstore", "installed", {});
   installedApps.value = extractAppList(data).map((item) => {
     if (item.IconUrl && item.IconUrl.startsWith("/")) {
-      item.IconUrl = host + item.IconUrl;
+      item.IconUrl = absoluteUrl(item.IconUrl);
     }
     return normalizeApp({
       ...item,
@@ -327,7 +331,7 @@ const refreshCurrentView = async () => {
 const refreshAfterMutation = async () => {
   await loadInstalled();
   await refreshCurrentView();
-  await hooks.refresh();
+  await $webhook.refresh();
   await user.loadUser();
 };
 
@@ -336,7 +340,7 @@ const installOrUpgradeApp = async (type, code) => {
     return;
   }
   setInstallState(code, { progress: 1 });
-  let url = new URL(await getApiHost());
+  let url = new URL(absoluteUrl());
   const hostUrl = url.protocol + "//" + url.hostname;
   let success = false;
   let failed = false;
@@ -437,16 +441,19 @@ const openPlugin = async (app) => {
   } else if (item.PluginType === 3) {
     path = `/api/thirdplugin/${item.Code}/`;
   } else if (item.PluginType === 4) {
-    path = item.AccessUrl;
+    path = item.Runtime?.AccessUrl || getInstalledApp(item.Code)?.Runtime?.AccessUrl;
+    if (!path) {
+      $msg.message.error($t("common.appstore.openFailed"));
+      return;
+    }
   }
-  const host = await getApiHost();
   const size = getWinSize();
   $wins.addWindow({
     icon:app.IconUrl,
     width: size.width,
     height: size.height,
     title: item.Name || item.Code,
-    iframeUrl: item.PluginType === 4 ? path : `${host}${path}`,
+    iframeUrl: absoluteUrl(`${path}`),
   });
 };
 
@@ -501,7 +508,7 @@ onMounted(async () => {
                   <n-card hoverable class="transition-transform duration-200 hover:-translate-y-0.5">
                     <div class="grid grid-cols-[64px_minmax(0,1fr)] gap-3">
                       <div class="relative shrink-0">
-                        <img v-if="app.IconUrl" :src="app.IconUrl" class="w-16 h-16 object-cover user-rounded-4" />
+                        <img v-if="app.IconUrl" :src="absoluteUrl(app.IconUrl)" class="w-16 h-16 object-cover user-rounded-4" />
                         <div v-else class="w-16 h-16 flex items-center justify-center user-rounded-4 user-color-surface-muted">?</div>
                         <n-badge v-if="hasUpgrade(app)" dot :offset="[-4, 4]" />
                       </div>

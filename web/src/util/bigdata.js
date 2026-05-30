@@ -52,6 +52,7 @@ export function getBigData(key) {
 
 }
 export async function setBigData(key, val) {
+    val = JSON.parse(JSON.stringify(val))
     let data = await getBigData(key);
     if (data === false) {
         return false;

@@ -7,7 +7,7 @@ import { useEventBus } from "@/util/event.js";
 import { elementInMe, delayAction } from "@/util/util.js";
 import emitter from "@/util/event.js";
 import ChatNotifyPopover from "@/components/common/component/user/chat/ChatNotifyPopover.vue";
-import IconView from "@/components/common/IconView.vue";
+import IconView from "@/components/common/component/util/IconView.vue";
 
 const StartMenu = defineAsyncComponent(() => import("./StartMenu.vue"));
 const startBtn = ref();

@@ -49,7 +49,8 @@
       "wakeup": "唤醒",
       "click": "点击{key}",
       "poweron": "开机",
-      "no":"无"
+      "no":"无",
+      "yes":"有"
     },
     "kernelUpgrade": {
       "currentVersion": "当前版本",
@@ -181,6 +182,7 @@
       "alwaysRunning": "常驻",
       "minutes": "{count} 分钟",
       "installReasonFallback": "当前环境不可安装",
+      "openFailed": "无法打开远程应用，缺少访问地址",
       "listSeparator": "、",
       "pluginTypes": {
         "main": "主程序插件",
@@ -196,11 +198,9 @@
         "installedVersion": "已装版本",
         "minHostVersion": "最低主程序版本",
         "remark": "备注",
-        "interceptors": "拦截器",
         "debugPort": "调试端口",
         "webhook": "WebHook",
         "closeDelay": "关闭延迟",
-        "needLogin": "需要登录",
         "status": "状态",
         "firstMachine": "首台机器",
         "name": "名称",

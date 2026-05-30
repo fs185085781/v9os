@@ -167,6 +167,7 @@ func createDefaultConfig() *ConfigAll {
 			MaxOpenConns: 100,
 			Cache:        true,
 			SoftDelete:   false,
+			ShowSql:      false,
 		},
 		Distributed: &DistributedConfig{
 			Enabled:       false,
@@ -187,8 +188,8 @@ func createDefaultConfig() *ConfigAll {
 			},
 			Rocket: &RocketQueueConfig{
 				Addrs:     []string{"localhost:9002"},
-				AccessKey: "admin",
-				Secret:    "123456",
+				AccessKey: "accesskey",
+				Secret:    "secret",
 				Topic:     "v9os",
 			},
 			Redis: &RedisQueueConfig{

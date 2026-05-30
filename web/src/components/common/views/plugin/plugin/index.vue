@@ -32,12 +32,6 @@ const plugin_typeOptionMap = computed(() => {
     "4": $t("model.plugin.plugin_type_select_4"),
     }
 })
-const need_loginOptionMap = computed(() => {
-    return {
-    "0": $t("model.plugin.need_login_select_0"),
-    "1": $t("model.plugin.need_login_select_1"),
-    }
-})
 const columnFn = () =>[
     {
         type: 'selection'
@@ -117,13 +111,6 @@ const columnFn = () =>[
             return plugin_typeOptionMap.value[row.PluginType]
         }
     },{
-        title: $t("model.plugin.interceptors"),
-        key: 'Interceptors',
-        sorter: true,
-        resizable: true,
-        ellipsis: true,
-        minWidth: 120
-    },{
         title: $t("model.plugin.web_hook"),
         key: 'WebHook',
         sorter: true,
@@ -137,15 +124,6 @@ const columnFn = () =>[
         resizable: true,
         ellipsis: true,
         minWidth: 120
-    },{
-        title: $t("model.plugin.need_login"),
-        key: 'NeedLogin',
-        sorter: true,
-        resizable: true,
-        ellipsis: true,
-        minWidth: 120,render(row) {
-            return need_loginOptionMap.value[row.NeedLogin]
-        }
     },{
         title: $t("model.plugin.icon_url"),
         key: 'IconUrl',
@@ -163,6 +141,27 @@ const columnFn = () =>[
     },{
         title: $t("model.plugin.debug_port"),
         key: 'DebugPort',
+        sorter: true,
+        resizable: true,
+        ellipsis: true,
+        minWidth: 120
+    },{
+        title: $t("model.plugin.open_exts"),
+        key: 'OpenExts',
+        sorter: true,
+        resizable: true,
+        ellipsis: true,
+        minWidth: 120
+    },{
+        title: $t("model.plugin.edit_exts"),
+        key: 'EditExts',
+        sorter: true,
+        resizable: true,
+        ellipsis: true,
+        minWidth: 120
+    },{
+        title: $t("model.plugin.expand_exts"),
+        key: 'ExpandExts',
         sorter: true,
         resizable: true,
         ellipsis: true,

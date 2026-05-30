@@ -1,7 +1,8 @@
 <script setup>
 import { reactive, computed, onMounted, ref } from "vue";
 import { NButton, NInput, NSelect, NSpace, NSwitch } from "naive-ui";
-import { postData } from "@/util/util";
+import { postData,absoluteUrl } from "@/util/util";
+import SingleSelectFile from "@/components/common/component/util/SingleSelectFile.vue";
 
 const saving = ref(false);
 const form = reactive({
@@ -74,7 +75,7 @@ function applyWebSettings(data) {
 }
 
 async function loadWebSettings(isFirst) {
-  if(!isFirst){
+  if (!isFirst) {
     await $user.loadUser();
   }
   applyWebSettings($user.webSettings.value || {});
@@ -116,7 +117,8 @@ onMounted(() => {
 
     <div class="mb-6">
       <div class="font-600 mb-2 user-color-ftext">{{ $t("common.settings.default_pwd") }}</div>
-      <n-input v-model:value="form.DefaultPwd" type="password" show-password-on="click" :placeholder="$t('common.settings.default_pwd')" />
+      <n-input v-model:value="form.DefaultPwd" type="password" show-password-on="click"
+        :placeholder="$t('common.settings.default_pwd')" />
     </div>
 
     <div class="mb-6">
@@ -157,11 +159,25 @@ onMounted(() => {
     <div class="mb-6">
       <div class="font-600 mb-2 user-color-ftext">{{ $t("model.user_settings.default_wallpaper") }}</div>
       <n-space align="center">
-        <n-input v-model:value="form.DefaultWallpaper" :placeholder="$t('model.user_settings.default_wallpaper')" class="w-75" />
-        <n-select v-model:value="form.DefaultWallpaperType" :options="wallpaperTypeOptions" class="w-25" />
+        <n-input size="small" v-model:value="form.DefaultWallpaper" :placeholder="$t('model.user_settings.default_wallpaper')"
+          class="w-75" />
+        <n-select size="small" v-model:value="form.DefaultWallpaperType" :options="wallpaperTypeOptions" class="w-25" />
+        <SingleSelectFile size="small" scene="comon_wallpaper" accept=".jpg,.jpeg,.png,.mp4" :val="form.DefaultWallpaper"
+          :onlybtn="true" @change="(p) => form.DefaultWallpaper = p" />
+        <n-button size="small" @click="form.DefaultWallpaper = 'default'">{{
+          $t("common.settings.restore_default")
+        }}</n-button>
       </n-space>
+      <div class="mt-2">
+        <img v-if="form.DefaultWallpaperType == 'image' && form.DefaultWallpaper == 'default'"
+          class="max-w-[200px] max-h-[100px] object-cover border user-color-border user-rounded-lg" :src="absoluteUrl('/assets/'+$user.settings.Mode+'/img/wallpaper.jpg')" />
+        <img v-else-if="form.DefaultWallpaperType == 'image' && form.DefaultWallpaper"
+          class="max-w-[200px] max-h-[100px] object-cover border user-color-border user-rounded-lg" :src="absoluteUrl(form.DefaultWallpaper)" />
+        <video v-if="form.DefaultWallpaperType == 'video' && form.DefaultWallpaper"
+          class="max-w-[200px] max-h-[100px] object-cover border user-color-border user-rounded-lg" :src="absoluteUrl(form.DefaultWallpaper)" autoplay
+          muted loop></video>
+      </div>
     </div>
-
     <div class="mb-6">
       <div class="font-600 mb-2 user-color-ftext">{{ $t("common.settings.beian_name") }}</div>
       <n-input v-model:value="form.BeianName" :placeholder="$t('common.settings.beian_name')" />

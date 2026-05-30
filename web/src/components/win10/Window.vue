@@ -3,8 +3,8 @@ import { computed, ref, nextTick, onMounted } from 'vue'
 import Vue3DraggableResizable from 'vue3-draggable-resizable'
 import 'vue3-draggable-resizable/dist/Vue3DraggableResizable.css'
 import emitter from '@/util/event.js';
-import GlassLayer from "@/components/common/GlassLayer.vue";
-import IconView from "@/components/common/IconView.vue";
+import GlassLayer from "@/components/common/component/util/GlassLayer.vue";
+import IconView from "@/components/common/component/util/IconView.vue";
 //读取属性
 const props = defineProps({
   data: {
@@ -112,7 +112,7 @@ const glassRadiusClass = computed(() => winData.status == "max" ? "user-rounded-
       <div :class="{ 'unselectable': winCommon.inDraggable }"
         class="user-rounded-b-2.5 innner-window w-full overflow-y-auto user-color-fbg user-color-ftext border border-t-0"
         :style="{ height: `${winData.height - 32}px` }" @mousedown="tapOnWindow(false)">
-        <iframe ref="iframeUi" v-if="winData.iframeUrl" :src="winData.iframeUrl" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-pointer-lock allow-presentation allow-top-navigation allow-top-navigation-by-user-activation" class="w-full h-full"></iframe>
+        <iframe ref="iframeUi" v-if="winData.iframeUrl" :src="winData.iframeUrl" allow="fullscreen" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-pointer-lock allow-presentation allow-top-navigation allow-top-navigation-by-user-activation" class="w-full h-full"></iframe>
         <component v-else-if="winData.component" :is="winData.component" :data="winData.data" :winId="winData.id">
         </component>
       </div>

@@ -7,7 +7,10 @@ import (
 )
 
 type AppConfigData struct {
-	IsRemote bool `json:"is_remote"`
+	DistributedEnabled bool              `json:"distributed_enabled"`
+	AllMachine         map[string]string `json:"all_machine"`
+	CurrentMachine     string            `json:"current_machine"`
+	CanRunMachines     []string          `json:"can_run_machine"`
 }
 type appConfigResp struct {
 	Code int            `json:"code"`

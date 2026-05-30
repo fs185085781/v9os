@@ -296,8 +296,9 @@ func NewServer(cfg config.Config, log logger.Logger) (Server, error) {
 	ioc.Ioc().Register(ioc.KeyPluginManage, manager.NewPluginManage(s.cfg.Machine().Port, cfg, cache, log))
 	s.removeScript()
 	// 启动后回调函数
-	afterFuncs := uioc.AfterFuncs()
-	if afterFuncs != nil {
+	v := ioc.Ioc().Get(ioc.KeyAfterFunc)
+	if v != nil {
+		afterFuncs := v.([]interface{})
 		for _, fn := range afterFuncs {
 			fn.(func())()
 		}
@@ -345,9 +346,9 @@ exit
 				os.WriteFile(batPath, []byte(batContent), 0666)
 				cmd := exec.Command("cmd.exe", "/C", "update.bat")
 				cmd.Dir = distDir
-				fn := uioc.HideCmdFunc()
+				fn := ioc.Ioc().Get(ioc.KeyHideCmdFunc)
 				if fn != nil {
-					fn(cmd)
+					fn.(func(*exec.Cmd))(cmd)
 				}
 				cmd.Start()
 			default: // linux,macos
@@ -365,9 +366,9 @@ exit 0
 			}
 		}
 	}
-	closeFn := uioc.SystemCloseFunc()
+	closeFn := ioc.Ioc().Get(ioc.KeySystemCloseFunc)
 	if closeFn != nil {
-		closeFn()
+		closeFn.(func())()
 	} else {
 		s.Close()
 	}
@@ -379,7 +380,7 @@ var webFiles embed.FS
 
 func initRouter(engine *gin.Engine, middlewareMap *sync.Map) {
 	engine.Use(proxyFilter())
-	routerMap := uioc.ControllerMap()
+	routerMap := ioc.Ioc().Get(ioc.KeyControllerMap).(*sync.Map)
 	ioc.Ioc().Unregister(ioc.KeyControllerMap)
 	// 收集带权限元数据的路由，用于同步到 auth_registry
 	var authRoutes []*ioc.RouterStruct

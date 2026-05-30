@@ -17,7 +17,6 @@ export function adminMenu() {
                 { key: "plugin", pkey: "plugin", icon: renderIcon(DataTable) },
                 { key: "plugin_column", pkey: "plugin", icon: renderIcon(DataTable) },
                 { key: "plugin_data", pkey: "plugin", icon: renderIcon(DataTable) },
-                { key: "plugin_feature", pkey: "plugin", icon: renderIcon(DataTable) },
                 { key: "plugin_table", pkey: "plugin", icon: renderIcon(DataTable) },
                 { key: "plugin_web_data", pkey: "plugin", icon: renderIcon(DataTable) },
                 { key: "user", pkey: "user", icon: renderIcon(DataTable) },

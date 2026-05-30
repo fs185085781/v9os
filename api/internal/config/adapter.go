@@ -40,6 +40,7 @@ type DatabaseConfig struct {
 	MaxOpenConns int      `json:"max_open_conns"`
 	Cache        bool     `json:"cache"`
 	SoftDelete   bool     `json:"soft_delete"`
+	ShowSql      bool     `json:"show_sql"`
 }
 
 // CachebaseConfig Cachebase配置

@@ -58,24 +58,23 @@ func (m *framePluginManage) Stop(pluginName string) {
 }
 
 func (m *framePluginManage) Install(appInfo *store.AppInfo, opts InstallOptions) (*plugin.Plugin, error) {
-	if strings.TrimSpace(appInfo.AccessUrl) == "" {
+	return nil, m.common.unsupportedPluginAction("Install")
+}
+
+func (m *framePluginManage) InstallRemoteApp(info RemoteAppInstallInfo) (*plugin.Plugin, error) {
+	accessURL := strings.TrimSpace(info.AccessUrl)
+	if accessURL == "" {
 		return nil, fmt.Errorf("frame plugin access url not found")
 	}
-	code := framePluginCode(appInfo.AccessUrl)
 	pluginModel := plugin.Plugin{
-		Name:        appInfo.Name,
-		Description: appInfo.Description,
-		Code:        code,
-		Status:      appInfo.Status,
-		Remark:      appInfo.Remark,
-		Version:     appInfo.Version,
+		Name:        info.Name,
+		Description: info.Description,
+		Code:        framePluginCode(accessURL),
+		Status:      1,
+		Version:     strings.TrimSpace(info.Version),
 		PluginType:  4,
-		IconUrl:     appInfo.IconUrl,
-		NeedLogin:   appInfo.NeedLogin,
-		AccessUrl:   strings.TrimSpace(appInfo.AccessUrl),
-	}
-	if pluginModel.Status == 0 {
-		pluginModel.Status = 1
+		IconUrl:     info.IconUrl,
+		AccessUrl:   accessURL,
 	}
 	if pluginModel.Version == "" {
 		pluginModel.Version = "0.0.0"
@@ -136,7 +135,6 @@ func (m *framePluginManage) deletePluginAuths(code string) {
 	if code == "" {
 		return
 	}
-	uioc.Database().Write().Where("plugin_code = ?", code).Delete(&plugin.PluginFeature{})
 	userProvider := ioc.Ioc().Get(ioc.KeyUserProvider)
 	if userProvider != nil {
 		userProvider.(infaceUser.UserProvider).SyncPluginAuths(code, "", []interface{}{})

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
 	"github.com/fs185085781/v9os/internal/controller"
 	"github.com/fs185085781/v9os/internal/model/plugin"
 	"github.com/fs185085781/v9os/pkg/util"
@@ -59,29 +60,29 @@ func (c *PluginController) pageParam(param controller.PageParam) (*gorm.DB, erro
 	if param.ParamString("keyword") != "" {
 		db = db.Where("first_machine like ?", "%"+param.ParamString("keyword")+"%")
 	}
-	
+
 	field2column := map[string]string{
 		"FirstMachine": "first_machine",
 		"RuntimeError": "runtime_error",
-		"Name": "name",
-		"Description": "description",
-		"CloseDelay": "close_delay",
-		"Code": "code",
-		"Status": "status",
-		"Remark": "remark",
-		"Version": "version",
-		"PluginType": "plugin_type",
-		"Interceptors": "interceptors",
-		"WebHook": "web_hook",
+		"Name":         "name",
+		"Description":  "description",
+		"CloseDelay":   "close_delay",
+		"Code":         "code",
+		"Status":       "status",
+		"Remark":       "remark",
+		"Version":      "version",
+		"PluginType":   "plugin_type",
+		"WebHook":      "web_hook",
 		"LimitVersion": "limit_version",
-		"NeedLogin": "need_login",
-		"IconUrl": "icon_url",
-		"AccessUrl": "access_url",
-		"DebugPort": "debug_port",
-		"ID": "id",
-		"CreatedAt": "created_at",
-		"UpdatedAt": "updated_at",
-		
+		"IconUrl":      "icon_url",
+		"AccessUrl":    "access_url",
+		"DebugPort":    "debug_port",
+		"OpenExts":     "open_exts",
+		"EditExts":     "edit_exts",
+		"ExpandExts":   "expand_exts",
+		"ID":           "id",
+		"CreatedAt":    "created_at",
+		"UpdatedAt":    "updated_at",
 	}
 	for _, v := range param.Sorter() {
 		o := v.Order()
@@ -197,17 +198,17 @@ func (c *PluginController) ImportXlsx(ctx *gin.Context) {
 		{FieldName: "Remark", CnName: c.GetText(ctx, "model.plugin.remark")},
 		{FieldName: "Version", CnName: c.GetText(ctx, "model.plugin.version")},
 		{FieldName: "PluginType", CnName: c.GetText(ctx, "model.plugin.plugin_type")},
-		{FieldName: "Interceptors", CnName: c.GetText(ctx, "model.plugin.interceptors")},
 		{FieldName: "WebHook", CnName: c.GetText(ctx, "model.plugin.web_hook")},
 		{FieldName: "LimitVersion", CnName: c.GetText(ctx, "model.plugin.limit_version")},
-		{FieldName: "NeedLogin", CnName: c.GetText(ctx, "model.plugin.need_login")},
 		{FieldName: "IconUrl", CnName: c.GetText(ctx, "model.plugin.icon_url")},
 		{FieldName: "AccessUrl", CnName: c.GetText(ctx, "model.plugin.access_url")},
 		{FieldName: "DebugPort", CnName: c.GetText(ctx, "model.plugin.debug_port")},
+		{FieldName: "OpenExts", CnName: c.GetText(ctx, "model.plugin.open_exts")},
+		{FieldName: "EditExts", CnName: c.GetText(ctx, "model.plugin.edit_exts")},
+		{FieldName: "ExpandExts", CnName: c.GetText(ctx, "model.plugin.expand_exts")},
 		{FieldName: "ID", CnName: c.GetText(ctx, "model.common.id")},
 		{FieldName: "CreatedAt", CnName: c.GetText(ctx, "model.common.createdat")},
 		{FieldName: "UpdatedAt", CnName: c.GetText(ctx, "model.common.updatedat")},
-		
 	}
 	cnNameToFieldMap := make(map[string]string)
 	for _, header := range headers {
@@ -270,7 +271,7 @@ func (c *PluginController) ExportXlsx(ctx *gin.Context) {
 	c.exportXlsx(param, ctx)
 }
 
-func (c *PluginController) exportXlsx(param controller.PageParam,ctx *gin.Context) {
+func (c *PluginController) exportXlsx(param controller.PageParam, ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	fileName := fmt.Sprintf("%s%s.xlsx", c.GetText(ctx, "model.plugin.model"), c.GetText(ctx, "common.export"))
 	encodedFileName := url.QueryEscape(fileName)
@@ -287,7 +288,7 @@ func (c *PluginController) exportXlsx(param controller.PageParam,ctx *gin.Contex
 		{FieldName: "Status", CnName: c.GetText(ctx, "model.plugin.status"), FieldType: "select", Selects: map[string]string{
 			"0": c.GetText(ctx, "model.plugin.status_select_0"),
 			"1": c.GetText(ctx, "model.plugin.status_select_1"),
-			}},
+		}},
 		{FieldName: "Remark", CnName: c.GetText(ctx, "model.plugin.remark"), FieldType: "input"},
 		{FieldName: "Version", CnName: c.GetText(ctx, "model.plugin.version"), FieldType: "input"},
 		{FieldName: "PluginType", CnName: c.GetText(ctx, "model.plugin.plugin_type"), FieldType: "select", Selects: map[string]string{
@@ -295,21 +296,19 @@ func (c *PluginController) exportXlsx(param controller.PageParam,ctx *gin.Contex
 			"2": c.GetText(ctx, "model.plugin.plugin_type_select_2"),
 			"3": c.GetText(ctx, "model.plugin.plugin_type_select_3"),
 			"4": c.GetText(ctx, "model.plugin.plugin_type_select_4"),
-			}},
-		{FieldName: "Interceptors", CnName: c.GetText(ctx, "model.plugin.interceptors"), FieldType: "input"},
+		}},
 		{FieldName: "WebHook", CnName: c.GetText(ctx, "model.plugin.web_hook"), FieldType: "input"},
 		{FieldName: "LimitVersion", CnName: c.GetText(ctx, "model.plugin.limit_version"), FieldType: "input"},
-		{FieldName: "NeedLogin", CnName: c.GetText(ctx, "model.plugin.need_login"), FieldType: "select", Selects: map[string]string{
-			"0": c.GetText(ctx, "model.plugin.need_login_select_0"),
-			"1": c.GetText(ctx, "model.plugin.need_login_select_1"),
-			}},
 		{FieldName: "IconUrl", CnName: c.GetText(ctx, "model.plugin.icon_url"), FieldType: "input"},
 		{FieldName: "AccessUrl", CnName: c.GetText(ctx, "model.plugin.access_url"), FieldType: "input"},
 		{FieldName: "DebugPort", CnName: c.GetText(ctx, "model.plugin.debug_port"), FieldType: "input"},
+		{FieldName: "OpenExts", CnName: c.GetText(ctx, "model.plugin.open_exts"), FieldType: "input"},
+		{FieldName: "EditExts", CnName: c.GetText(ctx, "model.plugin.edit_exts"), FieldType: "input"},
+		{FieldName: "ExpandExts", CnName: c.GetText(ctx, "model.plugin.expand_exts"), FieldType: "input"},
 		{FieldName: "ID", CnName: c.GetText(ctx, "model.common.id"), FieldType: "input"},
 		{FieldName: "CreatedAt", CnName: c.GetText(ctx, "model.common.createdat"), FieldType: "datetime"},
 		{FieldName: "UpdatedAt", CnName: c.GetText(ctx, "model.common.updatedat"), FieldType: "datetime"},
-		}
+	}
 	var err error
 	if param.ParamBool("isTemplate") {
 		err = util.ExportXlsx(headers, ctx.Writer, func() ([]interface{}, bool, error) {

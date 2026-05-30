@@ -1,6 +1,6 @@
 import { reactive } from "vue";
 import { defineStore } from "pinia";
-import { getApiHost, uuid } from "@/util/util";
+import { absoluteUrl, uuid } from "@/util/util";
 import emitter from "@/util/event.js";
 
 export const websocketStore = defineStore("websocket", () => {
@@ -86,8 +86,7 @@ export const websocketStore = defineStore("websocket", () => {
       return;
     }
     client.connecting = true;
-    const ah = await getApiHost();
-    const wh = ah.replace("http", "ws");
+    const wh = absoluteUrl().replace("http", "ws");
     const wsUrl = `${wh}/api/ws${client.path}?cid=${cid}&token=${localStorage.getItem("token")}`;
     try {
       client.ws = new WebSocket(wsUrl);

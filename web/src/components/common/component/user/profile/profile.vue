@@ -1,11 +1,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted, defineAsyncComponent } from "vue";
 import { NForm, NFormItem, NInput, NButton, NSpace, NTag } from "naive-ui";
-import { postData } from "@/util/util";
+import { postData,absoluteUrl } from "@/util/util";
 import { windowsStore } from "@/stores/windows";
 import SecurityVerifyCom from "./com/SecurityVerify.vue";
 import ChangePwdCom from "./com/ChangePwd.vue";
 import { useEventBus } from "@/util/event.js";
+import SingleSelectFile from "@/components/common/component/util/SingleSelectFile.vue";
 let Profile = null;
 const mod = window.__INFACE_MODS__["/src/components/common/inface/user_ee/com/profile.vue"];
 if (mod) {
@@ -82,7 +83,7 @@ if (!Profile) {
   <template v-else>
     <div class="max-w-150 mx-auto py-4">
       <div class="flex items-center mb-6">
-        <img v-if="form.Avatar" :src="form.Avatar" class="w-16 h-16 rounded-full mr-4 shrink-0 object-cover" />
+        <img v-if="form.Avatar" :src="absoluteUrl(form.Avatar)" class="w-16 h-16 rounded-full mr-4 shrink-0 object-cover" />
         <div v-else
           class="w-16 h-16 rounded-full mr-4 shrink-0 flex items-center justify-center user-color-bg text-white text-2xl font-600">
           {{ userInfo.Username?.charAt(0)?.toUpperCase() }}
@@ -91,7 +92,8 @@ if (!Profile) {
       </div>
       <n-form label-placement="left" label-width="100">
         <n-form-item :label="$t('component.user.profile.avatar_url')">
-          <n-input v-model:value="form.Avatar" :placeholder="$t('component.user.profile.avatar_placeholder')" />
+          <n-input v-model:value="form.Avatar" :placeholder="$t('component.user.profile.avatar_placeholder')" class="w-full" />
+          <SingleSelectFile scene="avatar" accept=".jpg,.jpeg,.png" :val="form.Avatar" :onlybtn="true" @change="(p) => form.Avatar = p" class="ml-2"/>
         </n-form-item>
         <n-form-item :label="$t('component.user.profile.nickname')">
           <n-input v-model:value="form.Name" />

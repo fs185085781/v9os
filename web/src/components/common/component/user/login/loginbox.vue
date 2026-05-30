@@ -19,9 +19,7 @@
 </template>
 <script setup>
 import { reactive,defineAsyncComponent } from "vue";
-import { NIcon } from "naive-ui";
 import { postData } from "@/util/util.js";
-import { Password20Regular, Person20Regular } from "@vicons/fluent";
 let Login = null;
 const mod = window.__INFACE_MODS__["/src/components/common/inface/user_ee/com/login.vue"];
 if (mod) {

@@ -1,6 +1,6 @@
 # 前端插件开发
 
-[返回总入口](starts.md) | [主程序插件开发](plugin-main.md) | [第三方插件开发](plugin-third.md) | [疑难解答](troubleshooting.md)
+[返回总入口](starts.md) | [AI开发前端插件](ai-web-plugin-rules.md) | [主程序插件开发](plugin-main.md) | [第三方插件开发](plugin-third.md) | [疑难解答](troubleshooting.md)
 
 前端插件是 `PluginType = 2` 的插件。它不需要独立后端进程，只要把前端文件放到运行目录的 `plugins/web/{code}` 中，并在内核插件表创建同编码记录即可。
 
@@ -12,7 +12,7 @@
 
 - 纯展示、报表、低代码页面。
 - 调用已有 HTTP API 的工具页。
-- 使用 `$v9os.webDataPost` 保存少量用户级插件数据。
+- 使用 `$v9os.api.webDataPost` 保存少量用户级插件数据。
 - 需要快速接入 V9OS 窗口、主题、右键菜单和父子窗口通信的页面。
 
 如果需要 Go 后端、数据库虚拟表、队列、锁、事件订阅等能力，优先使用 [主程序插件开发](plugin-main.md)。
@@ -51,11 +51,11 @@ http://127.0.0.1:9099/api/webplugin/web_demo/
 SDK 提供：
 
 - 主题变量注入与 `window.onPersonalChange`。
-- `$v9os.webDataPost(code, action, payload)`。
-- `$v9os.eventOn()` / `$v9os.eventEmit()`。
+- `$v9os.api.webDataPost(code, action, payload)`。
+- `$v9os.event.on()` / `$v9os.event.emit()`。
 - `$v9os.invoke()` 调用内核暴露对象。
 - `$v9os.contextMenu` 右键菜单能力。
-- `$v9os.successMsg()` / `$v9os.errorMsg()` 消息提示。
+- `$v9os.msg.success()` / `$v9os.msg.error()` 消息提示。
 
 ## 四、创建插件数据
 
@@ -74,7 +74,6 @@ SDK 提供：
 | `PluginType` | `2` |
 | `Status` | `1` |
 | `Version` | `1.0.1` |
-| `NeedLogin` | 按需设置 |
 | `IconUrl` | `/api/webplugin/web_demo/logo.png` |
 
 访问路径：
@@ -90,16 +89,16 @@ http://127.0.0.1:9099/api/webplugin/web_demo/
 前端插件的轻量持久化使用内核的插件扩展数据表。示例：
 
 ```js
-await $v9os.webDataPost("web_demo", "set", {
+await $v9os.api.webDataPost("web_demo", "set", {
   key: "demo_note",
   value: "hello"
 });
 
-const value = await $v9os.webDataPost("web_demo", "get", {
+const value = await $v9os.api.webDataPost("web_demo", "get", {
   key: "demo_note"
 });
 
-await $v9os.webDataPost("web_demo", "del", {
+await $v9os.api.webDataPost("web_demo", "del", {
   key: "demo_note"
 });
 ```

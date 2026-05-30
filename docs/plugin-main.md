@@ -1,6 +1,6 @@
 # 主程序插件开发
 
-[返回总入口](starts.md) | [前端插件开发](plugin-web.md) | [第三方插件开发](plugin-third.md) | [架构原理](architecture.md)
+[返回总入口](starts.md) | [AI开发主程序插件](ai-main-plugin-rules.md) | [前端插件开发](plugin-web.md) | [第三方插件开发](plugin-third.md) | [架构原理](architecture.md)
 
 主程序插件是 `PluginType = 1` 的插件。它有独立 Go 进程，可以通过 `share/plugin` 调用内核能力，同时可以附带前端页面，通过 `/page/{code}/` 被主程序打开。
 
@@ -35,8 +35,8 @@ plugins/main_demo/
 
 `plugins/main_demo/web/index.html` 已按这个方式引入。SDK 会注入 `$v9os`，常用能力包括：
 
-- `$v9os.pluginPost(code, action, payload)`：调用主程序插件后端动作。
-- `$v9os.eventOn()` / `$v9os.eventEmit()`：窗口和插件页面间事件通信。
+- `$v9os.api.pluginPost(code, action, payload)`：调用主程序插件后端动作。
+- `$v9os.event.on()` / `$v9os.event.emit()`：窗口和插件页面间事件通信。
 - `$v9os.invoke("$wins", "addWindow", options, parentWinId)`：请求内核打开窗口。
 - `$v9os.contextMenu.show()`：请求内核渲染右键菜单。
 - `window.onPersonalChange`：接收主题、颜色、圆角、语言等个性化变化。
@@ -58,6 +58,19 @@ plugins/main_demo/
 
 建议开发时从 `main_demo` 拷贝一个新插件目录，再逐步替换 `Code`、模块名、页面和动作。
 
+### 模型定义注意事项
+
+主程序插件在通过 `plugin.RegisterModel` 注册模型时，需要遵守以下约束：
+
+- 模型字段不允许添加 `json` tag，只保留数据库/字段所需的 tag，例如 `gorm` tag。
+- 模型字段不要使用 `bool` 类型；需要表达开关、是否、状态时，统一使用 `int`、`string` 等更稳定的类型，例如 `0/1` 或枚举字符串。
+- 模型字段名和 `gorm:"column:xxx"` 中的列名不要使用 SQL 关键字、排序词、聚合函数名或表达式关键字。
+  禁止或强烈不推荐使用：`asc`、`desc`、`and`、`or`、`not`、`in`、`is`、`null`、`like`、`between`、`exists`、`as`、`on`、`by`、`order`、`group`、`having`、`select`、`distinct`、`count`、`sum`、`avg`、`min`、`max`、`case`、`when`、`then`、`else`、`end`。
+- 插件模型最终会落到 `main/api/internal/model/plugin/plugin_data.go` 对应的数据表结构中，因此字段设计必须节制使用资源：**常规字段最多 20 个、索引字段最多 5 个、文本字段最多 5 个**。
+- 新增字段前请先评估是否真的需要占用这些有限资源，避免后续模型扩展空间不足。
+
+原因是插件模型会被内核用于自动建表、字段解析、动态表单和跨进程数据转换。额外的 `json` tag 或 `bool` 类型可能导致字段解析、默认值、序列化或动态页面生成行为不一致；而字段数量过多会直接挤占插件数据表的可用空间，影响后续业务扩展。
+
 ## 四、内核插件表调试数据
 
 主程序插件调试前，需要先在内核数据库的 `plugin` 表中创建同编码插件记录：
@@ -70,7 +83,6 @@ plugins/main_demo/
 | `Status` | `1` | 启用 |
 | `Version` | `1.0.1` | 插件版本 |
 | `DebugPort` | `7055` | 大于 0 时内核直接代理到该调试端口 |
-| `NeedLogin` | `0` 或 `1` | 是否需要登录访问 |
 | `IconUrl` | `/page/main_demo/logo.png` | 图标路径 |
 
 可以通过系统内的插件管理页面新增，也可以在数据库中手动插入。编码不一致会导致 `/page/{code}/` 找不到插件。
@@ -117,10 +129,8 @@ os.Args = []string{"", "7055", "9099", "main_demo", "5173"}
   "Version": "1.0.1",
   "PluginType": "1",
   "Category": "其他",
-  "Interceptors": "",
   "WebHook": "",
   "LimitVersion": "1.0.0",
-  "NeedLogin": "0",
   "IconUrl": "/page/main_demo/logo.png",
   "Log": "首发"
 }

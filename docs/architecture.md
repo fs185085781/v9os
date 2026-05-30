@@ -78,7 +78,6 @@
 - `Version`：插件版本。
 - `AccessUrl`：第三方插件或远程应用地址。
 - `DebugPort`：主程序插件调试端口。
-- `NeedLogin`：是否要求登录。
 
 访问路径：
 
@@ -102,10 +101,8 @@
 - `Status`
 - `Version`
 - `PluginType`
-- `Interceptors`
 - `WebHook`
 - `LimitVersion`
-- `NeedLogin`
 - `IconUrl`
 - `DebugPort`
 - `ThirdPort`

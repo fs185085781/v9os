@@ -188,6 +188,14 @@ func (r *redisLock) GetVal() string {
 	return r.val
 }
 
+func (r *redisLock) IsAlive() bool {
+	lockVal, err := r.rs.GetValue(r.key)
+	if err != nil || lockVal == nil {
+		return false
+	}
+	return string(lockVal) == r.val
+}
+
 func (r *redisLock) Lock() {
 	for {
 		ok, err := r.rs.rsClient.SetNX(context.Background(), r.key, r.val, 30*time.Second).Result()

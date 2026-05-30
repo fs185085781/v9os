@@ -10,9 +10,8 @@ import {
 } from "naive-ui";
 import { windowsStore } from "@/stores/windows";
 import { useStore } from "@/stores/user.js";
-import { webhookStore } from "@/stores/webhook.js";
 import emitter from "@/util/event.js";
-import { getApiHost, postData } from "@/util/util";
+import {  postData,absoluteUrl } from "@/util/util";
 
 const props = defineProps({
   winId: {
@@ -23,7 +22,6 @@ const props = defineProps({
 
 const ws = windowsStore();
 const user = useStore();
-const hooks = webhookStore();
 
 const pluginType = ref(4);
 const osName = ref("");
@@ -36,7 +34,6 @@ const form = ref({
   accessUrl: "",
   iconUrl: "",
   description: "",
-  remark: ""
 });
 
 const typeOptions = computed(() => [
@@ -97,17 +94,16 @@ const submit = async () => {
     if (selectedFile.value) {
       data.append("file", selectedFile.value);
     }
-    const url = new URL(await getApiHost());
+    const url = new URL(absoluteUrl());
     data.append("hostUrl", `${url.protocol}//${url.hostname}`);
     data.append("name", form.value.name.trim());
     data.append("accessUrl", form.value.accessUrl.trim());
     data.append("iconUrl", form.value.iconUrl.trim());
     data.append("description", form.value.description.trim());
-    data.append("remark", form.value.remark.trim());
     const result = await postData("appstore", "add", data, "okerr");
     if (result) {
       emitter.emit("appstore-refresh", {});
-      await hooks.refresh();
+      await $webhook.refresh();
       await user.loadUser();
       closeWindow();
     }

@@ -1,5 +1,4 @@
 import emitter from "@/util/event.js";
-import encodeBase64 from "@/util/base64.js";
 export function uuid() {
   return "xxxxxyxxxxyxxxxxyxxxxxxxxyxxxxxx".replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0;
@@ -8,12 +7,15 @@ export function uuid() {
   });
 }
 let apiHost = null;
-export async function getApiHost() {
-  if (apiHost && apiHost.host) {
-    return apiHost.host;
+//本项目首次执行postData在语言加载,因此absoluteUrl方法在全局范围内(语言于main.js加载)都是安全的
+export function absoluteUrl(url) {
+  if (!url) {
+    url = "";
   }
-  await postData("health", "", null, "");
-  return apiHost.host;
+  if (url.startsWith("http") || url.startsWith("//") || !apiHost) {
+    return url
+  }
+  return apiHost.host + url
 }
 export async function postData(module, action, param, showType = "err", fn) {
   //err  okerr  ok
@@ -286,54 +288,6 @@ export function delayAction(tjFn, acFn, maxDelay) {
     }
   };
   that[key]();
-}
-export function emojiToBase64(emoji) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <text  x="50"  y="50" font-size="80" text-anchor="middle" dominant-baseline="central" font-family="'Segoe UI Emoji', 'Apple Color Emoji', sans-serif" fill="black">${emoji}</text></svg>`;
-  const base64 = 'data:image/svg+xml;base64,' + encodeBase64(svg);
-  return base64;
-}
-export function getComplementaryColor(backgroundColor) {
-  const tempEl = document.createElement('div');
-  tempEl.style.color = backgroundColor;
-  document.body.appendChild(tempEl);
-  const computedColor = getComputedStyle(tempEl).color;
-  document.body.removeChild(tempEl);
-
-  const rgbMatch = computedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!rgbMatch) return '#000000';
-
-  const bgColor = {
-    r: parseInt(rgbMatch[1]),
-    g: parseInt(rgbMatch[2]),
-    b: parseInt(rgbMatch[3])
-  };
-  const getLuminance = (rgb) => {
-    const sRGB = [rgb.r, rgb.g, rgb.b].map(c => {
-      c = c / 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
-  };
-  const getContrastRatio = (color1, color2) => {
-    const lum1 = getLuminance(color1);
-    const lum2 = getLuminance(color2);
-    const brightest = Math.max(lum1, lum2);
-    const darkest = Math.min(lum1, lum2);
-    return (brightest + 0.05) / (darkest + 0.05);
-  };
-  const black = { r: 0, g: 0, b: 0 };
-  const white = { r: 255, g: 255, b: 255 };
-  const contrastWithBlack = getContrastRatio(bgColor, black);
-  const contrastWithWhite = getContrastRatio(bgColor, white);
-  const minContrastRatio = 4.5;
-  if (contrastWithBlack >= minContrastRatio && contrastWithWhite >= minContrastRatio) {
-    return contrastWithBlack > contrastWithWhite ? '#000000' : '#ffffff';
-  }
-  if (contrastWithBlack >= minContrastRatio) return '#000000';
-  if (contrastWithWhite >= minContrastRatio) return '#ffffff';
-  const luminance = (0.299 * bgColor.r + 0.587 * bgColor.g + 0.114 * bgColor.b) / 255;
-  return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 const fnMap = {}
 export async function lockFn(key, fn) {

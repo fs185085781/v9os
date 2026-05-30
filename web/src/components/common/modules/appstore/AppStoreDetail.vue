@@ -2,10 +2,9 @@
 import { computed, ref, watch } from "vue";
 import { NButton, NEmpty, NImage, NSpace, NSpin } from "naive-ui";
 import { checkAuth } from "@/directives/auth";
-import { webhookStore } from "@/stores/webhook.js";
 import { useStore } from "@/stores/user.js";
 import emitter from "@/util/event.js";
-import { getApiHost, getWinSize, postData, postStreamData } from "@/util/util";
+import { getWinSize, postData, postStreamData,absoluteUrl } from "@/util/util";
 
 const props = defineProps({
   data: {
@@ -18,7 +17,6 @@ const props = defineProps({
   },
 });
 const user = useStore();
-const hooks = webhookStore();
 
 const selectedApp = ref(null);
 const appVersions = ref([]);
@@ -90,6 +88,13 @@ const normalizePackages = (record) => {
   }));
 };
 
+const normalizeRuntime = (record = {}) => {
+  const runtime = record?.Runtime ?? record?.runtime ?? record ?? {};
+  return {
+    AccessUrl: getString(runtime, "AccessUrl", "accessUrl"),
+  };
+};
+
 const normalizeApp = (record = {}) => ({
   ...record,
   Code: getString(record, "Code", "code"),
@@ -97,21 +102,11 @@ const normalizeApp = (record = {}) => ({
   Description: getString(record, "Description", "description"),
   IconUrl: getString(record, "IconUrl", "iconUrl"),
   Author: getString(record, "Author", "author"),
-  Remark: getString(record, "Remark", "remark"),
   Version: getString(record, "Version", "version"),
   StoreVersion: getString(record, "StoreVersion", "storeVersion"),
   Category: getString(record, "Category", "category"),
   PluginType: getNumber(record, "PluginType", "pluginType"),
-  AccessUrl: getString(record, "AccessUrl", "accessUrl"),
-  RuntimeError: getString(record, "RuntimeError", "runtimeError"),
-  FirstMachine: getString(record, "FirstMachine", "firstMachine"),
-  CloseDelay: getNumber(record, "CloseDelay", "closeDelay"),
-  Status: getNumber(record, "Status", "status"),
-  NeedLogin: getNumber(record, "NeedLogin", "needLogin"),
-  Interceptors: getString(record, "Interceptors", "interceptors"),
-  WebHook: getString(record, "WebHook", "webHook"),
   LimitVersion: getString(record, "LimitVersion", "limitVersion"),
-  DebugPort: getNumber(record, "DebugPort", "debugPort"),
   Installable: normalizeInstallable(record),
   InstallReason: getString(record, "InstallReason", "installReason"),
   Installed: getBool(record, "Installed", "installed"),
@@ -188,10 +183,6 @@ const versionPackageSummary = (packages) => {
     .join($t("common.appstore.listSeparator"));
 };
 
-const statusText = (status) =>
-  status === 1 ? $t("common.appstore.enabled") : $t("common.appstore.disabled");
-const yesNoText = (value) =>
-  value === 1 ? $t("common.appstore.yes") : $t("common.appstore.no");
 const isInstallable = (app) => app?.Installable !== false;
 const installReasonText = (app) =>
   app?.InstallReason || $t("common.appstore.installReasonFallback");
@@ -230,99 +221,8 @@ const detailCommonFields = computed(() => {
       label: $t("common.appstore.fields.installedVersion"),
       value: selectedApp.value.Version || "-",
     });
-    if (selectedApp.value.Remark) {
-      fields.push({
-        label: $t("common.appstore.fields.remark"),
-        value: selectedApp.value.Remark,
-      });
-    }
   }
   return fields;
-});
-
-const detailTypeFields = computed(() => {
-  if (!selectedApp.value) {
-    return [];
-  }
-  if (!selectedApp.value.Installed) {
-    return [];
-  }
-  if (selectedApp.value.PluginType === 1) {
-    return [
-      {
-        label: $t("common.appstore.fields.interceptors"),
-        value: selectedApp.value.Interceptors || "-",
-      },
-      {
-        label: $t("common.appstore.fields.debugPort"),
-        value: selectedApp.value.DebugPort || "-",
-      },
-      {
-        label: $t("common.appstore.fields.webhook"),
-        value: selectedApp.value.WebHook || "-",
-      },
-      {
-        label: $t("common.appstore.fields.closeDelay"),
-        value: selectedApp.value.CloseDelay
-          ? $t("common.appstore.minutes", {
-              count: selectedApp.value.CloseDelay,
-            })
-          : $t("common.appstore.alwaysRunning"),
-      },
-      {
-        label: $t("common.appstore.fields.needLogin"),
-        value: yesNoText(selectedApp.value.NeedLogin),
-      },
-      {
-        label: $t("common.appstore.fields.status"),
-        value: statusText(selectedApp.value.Status),
-      },
-    ];
-  }
-  if (selectedApp.value.PluginType === 3) {
-    const fields = [
-      {
-        label: $t("common.appstore.fields.firstMachine"),
-        value: selectedApp.value.FirstMachine || "-",
-      },
-      {
-        label: $t("common.appstore.fields.closeDelay"),
-        value: selectedApp.value.CloseDelay
-          ? $t("common.appstore.minutes", {
-              count: selectedApp.value.CloseDelay,
-            })
-          : $t("common.appstore.alwaysRunning"),
-      },
-      {
-        label: $t("common.appstore.fields.status"),
-        value: statusText(selectedApp.value.Status),
-      },
-      {
-        label: $t("common.appstore.fields.needLogin"),
-        value: yesNoText(selectedApp.value.NeedLogin),
-      },
-    ];
-    if (selectedApp.value.RuntimeError) {
-      fields.push({
-        label: "运行错误",
-        value: selectedApp.value.RuntimeError,
-      });
-    }
-    return fields;
-  }
-  if (selectedApp.value.PluginType === 4) {
-    return [
-      {
-        label: "访问地址",
-        value: selectedApp.value.AccessUrl || "-",
-      },
-      {
-        label: $t("common.appstore.fields.status"),
-        value: statusText(selectedApp.value.Status),
-      },
-    ];
-  }
-  return [];
 });
 
 const detailPackages = computed(() => selectedApp.value?.Packages || []);
@@ -338,9 +238,12 @@ const loadDetail = async (code) => {
   detailLoading.value = true;
   const data = await postData("appstore", "detail", { code });
   if(data && data.app && data.app.iconUrl && data.app.iconUrl.startsWith("/")){
-    data.app.iconUrl = await getApiHost() + data.app.iconUrl;
+    data.app.iconUrl = absoluteUrl(data.app.iconUrl);
   }
-  selectedApp.value = data ? normalizeApp(data.app || data) : null;
+  selectedApp.value = data ? {
+    ...normalizeApp(data.app || data),
+    Runtime: normalizeRuntime(data.installedRuntime),
+  } : null;
   appVersions.value = Array.isArray(data?.versions)
     ? data.versions.map(normalizeVersion)
     : [];
@@ -349,7 +252,7 @@ const loadDetail = async (code) => {
 
 const refreshAfterMutation = async (code) => {
   await loadDetail(code);
-  await hooks.refresh();
+  await $webhook.refresh();
   await user.loadUser();
   emitter.emit("appstore-refresh", { code });
 };
@@ -359,7 +262,7 @@ const installOrUpgradeApp = async (type, code) => {
     return;
   }
   installState.value = { progress: 1 };
-  let url = new URL(await getApiHost());
+  let url = new URL(absoluteUrl());
   const hostUrl = `${url.protocol}//${url.hostname}`;
   let success = false;
   let failed = false;
@@ -421,9 +324,12 @@ const openPlugin = async (app) => {
   } else if (item.PluginType === 3) {
     path = `/api/thirdplugin/${item.Code}/`;
   } else if (item.PluginType === 4) {
-    path = item.AccessUrl;
+    path = item.Runtime?.AccessUrl;
+    if (!path) {
+      $msg.message.error($t("common.appstore.openFailed"));
+      return;
+    }
   }
-  const host = await getApiHost();
   const size = getWinSize();
   $wins.addWindow(
     {
@@ -431,7 +337,7 @@ const openPlugin = async (app) => {
       width: size.width,
       height: size.height,
       title: item.Name || item.Code,
-      iframeUrl: item.PluginType === 4 ? path : `${host}${path}`,
+      iframeUrl: absoluteUrl(`${path}`),
     }
   );
 };
@@ -594,22 +500,6 @@ watch(
           >
             <div class="text-3 opacity-55">{{ field.label }}</div>
             <div class="mt-1.5 text-3.25 leading-1.5">{{ field.value }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="detailTypeFields.length > 0" class="mb-6">
-        <h3 class="m-0 mb-3 text-3.75 font-600">
-          {{ $t("common.appstore.typeCapabilities") }}
-        </h3>
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-          <div
-            v-for="field in detailTypeFields"
-            :key="field.label"
-            class="px-3.5 py-3 border user-color-border user-rounded-2.5 user-color-surface-muted"
-          >
-            <div class="text-3 opacity-55">{{ field.label }}</div>
-            <div class="mt-1.5 text-3.25 leading-1.5 break-all">{{ field.value }}</div>
           </div>
         </div>
       </div>

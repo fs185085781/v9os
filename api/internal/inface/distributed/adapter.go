@@ -6,6 +6,7 @@ import (
 	"github.com/fs185085781/v9os/internal/database"
 	"github.com/fs185085781/v9os/internal/logger"
 	"github.com/fs185085781/v9os/internal/queue"
+	"github.com/gin-gonic/gin"
 )
 
 type RuntimeContext struct {
@@ -35,6 +36,9 @@ type NodeRegistry interface {
 	Resolve(machineID string) (string, bool)
 	All() map[string]string
 	Info(machineID string) (MachineInfo, bool)
+	ProxyByMachineWhitelist(ctx *gin.Context, pluginCode string) bool
+	GetNodesAuth() int64
+	GetMachineIds(pluginCode string) []string
 }
 
 type MachineInfo struct {

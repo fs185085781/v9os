@@ -1,7 +1,7 @@
 <script setup>
 import { Apple, Linux, TabletAlt, Windows } from "@vicons/fa";
 import { NButton, NIcon, NSlider } from "naive-ui";
-import { getApiHost, getWinSize } from "@/util/util.js";
+import { getWinSize } from "@/util/util.js";
 import { WifiOutlined, WifiOffOutlined } from "@vicons/material";
 import { SettingOutlined } from "@vicons/antd";
 import {
@@ -14,9 +14,9 @@ import {
 } from "vue";
 import { useEventBus } from "@/util/event.js";
 import { elementInMe, delayAction } from "@/util/util.js";
-import GlassLayer from "@/components/common/GlassLayer.vue";
+import GlassLayer from "@/components/common/component/util/GlassLayer.vue";
 import ChatNotifyPopover from "@/components/common/component/user/chat/ChatNotifyPopover.vue";
-import IconView from "@/components/common/IconView.vue";
+import IconView from "@/components/common/component/util/IconView.vue";
 import { renderIcon } from "@/util/icon";
 const hasAppStore = ref(false);
 const settingsIcon = renderIcon(SettingOutlined, 40);
@@ -380,19 +380,6 @@ const openAndTopWin = (w) => {
           <div class="slider flex w-full">
             <n-slider v-model:value="soundVolume" :min="0" :max="100" :step="1" :tooltip="true" />
           </div>
-        </div>
-        <div class="cc-grid col-span-4 p-2 pr-4 flex-center-v flex-row justify-between space-x-2.5">
-          <img src="//p1.music.126.net/z0IO1vEsowL9mD_5yzUjeA==/109951163936068098.jpg" alt="cover art"
-            class="w-12 user-rounded-lg" />
-          <div class="flex flex-col flex-grow justify-start">
-            <span class="font-medium">Sunflower</span><span class="cc-text">Post Malone / Swae Lee</span>
-          </div>
-          <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" height="24" width="24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z">
-            </path>
-          </svg>
         </div>
       </div>
       <span>{{ rightPanel.dateTime.date }}</span><span>{{ rightPanel.dateTime.time }}</span>

@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"math/rand"
 	"reflect"
 	"time"
 
@@ -69,6 +70,8 @@ func init() {
 	c.RegisterAdminApi("POST", "/system/configSave", c.SaveConfig)
 	//获取站点设置
 	c.RegisterPublic("api", "POST", "/system/settingsGet", c.SettingsGet)
+	//获取APP设置
+	c.RegisterPublic("api", "POST", "/system/appconfig", c.AppConfig)
 	//保存站点设置
 	c.RegisterAdminApi("POST", "/system/settingsSave", c.SettingsSave)
 }
@@ -157,6 +160,9 @@ func WebSettingsGet() *webSettings {
 		return nil
 	}
 	if !flag {
+		modes := []string{"macos", "win10", "deepin", "backend"}
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		mode := modes[r.Intn(len(modes))]
 		wset = webSettings{
 			Title:                "V9OS",
 			Subtitle:             "Powered by QQ185085781",
@@ -165,7 +171,7 @@ func WebSettingsGet() *webSettings {
 			DefaultColor:         "green",
 			DefaultLang:          "zh",
 			DefaultTheme:         "light",
-			DefaultMode:          "macos",
+			DefaultMode:          mode,
 			DefaultFont:          "default",
 			DefaultRound:         "true",
 			DefaultWallpaper:     "default",
@@ -186,6 +192,17 @@ func (c *SystemController) SettingsGet(ctx *gin.Context) {
 		return
 	}
 	c.OkData(ctx, wset)
+}
+
+// 内核专用,公开
+type AppConfig struct {
+	DistributedEnabled bool `json:"distributed_enabled"`
+}
+
+func (c *SystemController) AppConfig(ctx *gin.Context) {
+	c.OkData(ctx, &AppConfig{
+		DistributedEnabled: c.Config().Distributed().Enabled,
+	})
 }
 
 func (c *SystemController) SettingsSave(ctx *gin.Context) {

@@ -75,8 +75,6 @@ func (b *BaseController) UserInfo(c *gin.Context) *user.User {
 
 // ----人员判断--结束----
 // ----消息返回--开始----
-const ResponseKey = "_gin-gonic/gin/responsekey"
-
 func (b *BaseController) OkData(c *gin.Context, data interface{}) {
 	b.jsonReturn(c, &gin.H{
 		"code": 0,
@@ -107,6 +105,14 @@ func (b *BaseController) ErrCode(c *gin.Context, code int, msg string) {
 		"code": -1,
 		"msg":  msg,
 	}, code, true)
+}
+
+func (b *BaseController) jsonReturn(c *gin.Context, data *gin.H, code int, abort bool) {
+	if abort {
+		c.AbortWithStatusJSON(code, data)
+	} else {
+		c.JSON(code, data)
+	}
 }
 
 func (b *BaseController) StreamStart(c *gin.Context) bool {
@@ -141,14 +147,6 @@ func (b *BaseController) StreamWrite(c *gin.Context, data interface{}) bool {
 		flusher.Flush()
 	}
 	return true
-}
-
-func (b *BaseController) jsonReturn(c *gin.Context, data *gin.H, code int, abort bool) {
-	if abort {
-		c.AbortWithStatusJSON(code, data)
-	} else {
-		c.JSON(code, data)
-	}
 }
 
 // ----消息返回--结束----

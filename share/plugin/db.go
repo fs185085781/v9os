@@ -280,7 +280,7 @@ func BindStruct(entity interface{}, table string) error {
 	if err != nil {
 		return err
 	}
-	if res["code"] != 0 {
+	if cast.ToInt(res["code"]) != 0 {
 		return errors.New(cast.ToString(res["msg"]))
 	}
 	return nil
@@ -288,7 +288,10 @@ func BindStruct(entity interface{}, table string) error {
 
 func AutoMigrate() {
 	for _, info := range modelList {
-		BindStruct(info.Model, info.TableName)
+		err := BindStruct(info.Model, info.TableName)
+		if err != nil {
+			fmt.Println("数据库同步失败", err)
+		}
 	}
 }
 

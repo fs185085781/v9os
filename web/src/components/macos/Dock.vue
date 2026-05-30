@@ -9,7 +9,7 @@ import { getWinSize} from "../../util/util.js";
 import { useStore } from "@/stores/user.js";
 import emitter, { useEventBus } from "@/util/event.js";
 import { openDesktopShortcutWin } from "@/components/common/modules/desktop/shortcut.js";
-import IconView from "@/components/common/IconView.vue";
+import IconView from "@/components/common/component/util/IconView.vue";
 const store = useStore();
 let animationFrameId = null;
 let lastMouseX = null;

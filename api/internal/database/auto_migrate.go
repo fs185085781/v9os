@@ -49,5 +49,6 @@ func checkCreateAdmin() error {
 		Name:     "Admin",
 		Password: util.EncodePassword("123456"),
 		Enabled:  1,
+		Avatar:   "/assets/images/logo.png",
 	})
 }

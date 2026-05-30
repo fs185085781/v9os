@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -33,7 +32,6 @@ type pluginInfo struct {
 	mu          sync.Mutex
 	cmd         *exec.Cmd
 	runKey      string
-	needLogin   int
 	closeDelay  int
 	closeTime   time.Time
 	needAddTime bool
@@ -71,7 +69,6 @@ func (o *commonPluginManage) newMainManage(serverPort int, cfg config.Config, c 
 		log:    log,
 		common: o,
 	}
-	a.syncAllPluginFeatures()
 	a.syncClearCloudPluginInfo()
 	util.Go(a.checkPluginClose)
 	a.log.Println("[main plugin manager] initialized")
@@ -150,26 +147,10 @@ func mainPluginText(ctx *gin.Context, key string) string {
 	return locales.GetTextCtx(ctx, key)
 }
 
-func (p *mainPluginManage) checkRunPlugin(needLogin int, ctx *gin.Context) error {
-	if ctx != nil && (strings.HasPrefix(ctx.Request.URL.Path, "/page/") || strings.HasPrefix(ctx.Request.URL.Path, "/stream/")) {
-		return nil
-	}
-	if ctx != nil && !ctx.GetBool("InternalSystem") && needLogin == 1 {
-		if ctx.GetString("userID") == "" {
-			return fmt.Errorf("%s", locales.GetTextCtx(ctx, "common.plugin.loginrequired"))
-		}
-	}
-	return nil
-}
-
 func (p *mainPluginManage) PluginHost(pluginName string, ctx *gin.Context) (string, error) {
 	info, _ := p.pluginMap.LoadOrStore(pluginName, &pluginInfo{})
 	pluginInfo := info.(*pluginInfo)
 	if pluginInfo.port != 0 {
-		err := p.checkRunPlugin(pluginInfo.needLogin, ctx)
-		if err != nil {
-			return "", err
-		}
 		p.syncLocalPackage(pluginName)
 		if pluginInfo.closeDelay > 0 {
 			pluginInfo.needAddTime = true
@@ -179,10 +160,6 @@ func (p *mainPluginManage) PluginHost(pluginName string, ctx *gin.Context) (stri
 	pluginInfo.mu.Lock()
 	defer pluginInfo.mu.Unlock()
 	if pluginInfo.port != 0 {
-		err := p.checkRunPlugin(pluginInfo.needLogin, ctx)
-		if err != nil {
-			return "", err
-		}
 		p.syncLocalPackage(pluginName)
 		if pluginInfo.closeDelay > 0 {
 			pluginInfo.needAddTime = true
@@ -201,17 +178,11 @@ func (p *mainPluginManage) PluginHost(pluginName string, ctx *gin.Context) (stri
 	if pluginModel.PluginType != 1 {
 		return "", fmt.Errorf(mainPluginText(ctx, "common.plugin.typeinvalid"), pluginName)
 	}
-	err = p.checkRunPlugin(pluginModel.NeedLogin, ctx)
-	if err != nil {
-		return "", err
-	}
 	if pluginModel.DebugPort > 0 {
 		pluginInfo.port = pluginModel.DebugPort
-		pluginInfo.needLogin = pluginModel.NeedLogin
 		pluginInfo.closeDelay = 0
 		pluginInfo.runKey = pluginName
 		p.runPluginMap.Store(pluginInfo.runKey, pluginName)
-		p.syncPluginFeatures(pluginName)
 		return fmt.Sprintf("http://127.0.0.1:%d", pluginModel.DebugPort), nil
 	}
 	rdir := p.PluginDir(pluginName)
@@ -279,13 +250,11 @@ func (p *mainPluginManage) PluginHost(pluginName string, ctx *gin.Context) (stri
 			}
 			if p.healthy(tmpPort, false) {
 				pluginInfo.port = tmpPort
-				pluginInfo.needLogin = pluginModel.NeedLogin
 				pluginInfo.closeDelay = pluginModel.CloseDelay
 				if pluginInfo.closeDelay > 0 {
 					pluginInfo.needAddTime = true
 				}
 				p.syncPluginInfoCloud()
-				p.syncPluginFeatures(pluginName)
 				return fmt.Sprintf("http://127.0.0.1:%d", tmpPort), nil
 			}
 		}
@@ -391,7 +360,6 @@ func (p *mainPluginManage) Install(appInfo *store.AppInfo, opts InstallOptions) 
 	if err := p.common.upsertPluginModel(&pluginModel); err != nil {
 		return nil, err
 	}
-	p.syncPluginFeatures(pluginModel.Code)
 	if pluginModel.Status == 1 {
 		if _, err := p.PluginHost(pluginModel.Code, nil); err != nil {
 			return nil, err
@@ -410,7 +378,6 @@ func (p *mainPluginManage) InstallLocalPackage(zipPath string, opts InstallOptio
 	if err := p.common.upsertPluginModel(&pluginModel); err != nil {
 		return nil, err
 	}
-	p.syncPluginFeatures(pluginModel.Code)
 	if pluginModel.Status == 1 {
 		if _, err := p.PluginHost(pluginModel.Code, nil); err != nil {
 			return nil, err
@@ -424,63 +391,8 @@ func (p *mainPluginManage) Uninstall(pluginModel plugin.Plugin) error {
 	q := uioc.Queue()
 	q.UnsubscribeByPlugin(code)
 	p.Close(code)
-	db := uioc.Database()
-	db.Write().Where("plugin_code = ?", code).Delete(&plugin.PluginFeature{})
 	if err := os.RemoveAll(p.PluginDir(code)); err != nil {
 		return err
 	}
 	return p.common.deletePluginModel(code)
-}
-func (p *mainPluginManage) syncPluginFeatures(pluginCode string) {
-	db := uioc.Database()
-	db.Write().Where("plugin_code = ?", pluginCode).Delete(&plugin.PluginFeature{})
-	var pluginModel plugin.Plugin
-	if err := db.Read().Where("code = ?", pluginCode).First(&pluginModel).Error; err != nil {
-		return
-	}
-	enabled := pluginModel.Status
-	var features []plugin.PluginFeature
-	for _, item := range p.splitCSV(pluginModel.Interceptors) {
-		features = append(features, plugin.PluginFeature{
-			PluginCode: pluginCode,
-			Enabled:    enabled,
-			Content:    item,
-		})
-	}
-	for i := range features {
-		db.Write().Create(&features[i])
-	}
-}
-
-func (p *mainPluginManage) syncAllPluginFeatures() {
-	db := uioc.Database()
-	db.Write().Where("1=1").Delete(&plugin.PluginFeature{})
-	var plugins []plugin.Plugin
-	if err := db.Read().Find(&plugins).Error; err != nil {
-		return
-	}
-	for _, pluginModel := range plugins {
-		var features []plugin.PluginFeature
-		for _, item := range p.splitCSV(pluginModel.Interceptors) {
-			features = append(features, plugin.PluginFeature{
-				PluginCode: pluginModel.Code,
-				Enabled:    pluginModel.Status,
-				Content:    item,
-			})
-		}
-		for i := range features {
-			db.Write().Create(&features[i])
-		}
-	}
-}
-
-func (p *mainPluginManage) splitCSV(s string) []string {
-	var result []string
-	for _, item := range strings.Split(s, ",") {
-		item = strings.TrimSpace(item)
-		if item != "" {
-			result = append(result, item)
-		}
-	}
-	return result
 }

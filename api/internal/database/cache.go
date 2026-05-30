@@ -31,10 +31,15 @@ func (g *gromCache) initCache(action string) func(*gorm.DB) {
 		table := ""
 		if db.Statement.Schema != nil {
 			table = strings.ToLower(db.Statement.Schema.Table)
-		} else {
-			table = strings.ToLower(db.Statement.Table)
+			table = strings.ReplaceAll(table, "`", "")
 		}
-		table = strings.ReplaceAll(table, "`", "")
+		if table == "" && db.Statement.Table != "" {
+			table = strings.ToLower(db.Statement.Table)
+			table = strings.ReplaceAll(table, "`", "")
+		}
+		if table == "" {
+			return
+		}
 		switch action {
 		case "befor_query":
 			g.beforeQuery(db, table)

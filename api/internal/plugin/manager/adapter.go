@@ -14,6 +14,14 @@ type InstallOptions struct {
 	Progress     func(percent int, msg string) bool
 }
 
+type RemoteAppInstallInfo struct {
+	Name        string
+	Description string
+	IconUrl     string
+	AccessUrl   string
+	Version     string
+}
+
 type IPluginManage interface {
 	// GetPluginName resolves a runtime key to a main plugin code.
 	GetPluginName(code, key string) (string, error)

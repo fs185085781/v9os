@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/fs185085781/v9os/internal/config"
+	"github.com/fs185085781/v9os/internal/ioc/uioc"
 	"github.com/fs185085781/v9os/internal/logger"
 	"github.com/fs185085781/v9os/pkg/util"
 	"github.com/gin-gonic/gin"
@@ -41,12 +43,32 @@ func NewRateLimiter(cfg *config.RateLimitConfig, log logger.Logger) *RateLimiter
 	return r
 }
 
+var machine = ""
+
 // Middleware 生成Gin中间件
 func (r *RateLimiter) Middleware() gin.HandlerFunc {
 	if r == nil || !r.enabled {
 		return func(c *gin.Context) { c.Next() }
 	}
 	return func(c *gin.Context) {
+		//跳过不限速接口
+		//1.插件调用内核如/pluginExp,/pluginPrivate
+		//2.前端资源文件如/api/webplugin,/api/thirdplugin,/page
+		paths := []string{"/pluginExp/", "/pluginPrivate/", "/api/webplugin/", "/api/thirdplugin/", "/page/"}
+		for _, path := range paths {
+			if strings.HasPrefix(c.Request.RequestURI, path) {
+				c.Next()
+				return
+			}
+		}
+		//跳过携带当前机器ID的请求
+		if machine == "" {
+			machine = uioc.Config().Machine().MachineId
+		}
+		if c.Request.Header.Get("machine") == machine {
+			c.Next()
+			return
+		}
 		limiter := r.getLimiter(c.ClientIP())
 		if !limiter.Allow() {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{

@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
@@ -24,7 +25,7 @@ func HasAuth(code string) error {
 	if err != nil {
 		return err
 	}
-	switch auth.Type {
+	switch auth.AuthType {
 	case "expired":
 		expired, err := strconv.ParseInt(auth.Value, 10, 64)
 		if err != nil || expired <= 0 || time.Now().Unix() > expired {
@@ -46,7 +47,7 @@ func HasAuthByTimes(code string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if auth.Type != "times" {
+	if auth.AuthType != "times" {
 		return 0, errors.New("official license unauthorized")
 	}
 	times, err := strconv.ParseInt(auth.Value, 10, 64)
@@ -58,14 +59,18 @@ func HasAuthByTimes(code string) (int64, error) {
 
 type pluginAuthCipherResult struct {
 	AuthID     string
+	EndAt      int64
+	AuthType   string
+	Value      string
 	AuthCipher string
 }
 
 type pluginAuthPlain struct {
-	AuthID string
-	Code   string
-	Type   string
-	Value  string
+	AuthID   string
+	EndAt    int64
+	AuthType string
+	Value    string
+	Code     string
 }
 
 func pluginAuthCipher(code string) (*pluginAuthCipherResult, error) {
@@ -83,7 +88,22 @@ func pluginAuthCipher(code string) (*pluginAuthCipherResult, error) {
 	if !ok || authID == "" {
 		return nil, errors.New("official license auth id not found")
 	}
-	return &pluginAuthCipherResult{AuthID: authID, AuthCipher: authCipher}, nil
+	endAt := parseJSONInt64(res["endAt"])
+	if endAt <= 0 {
+		return nil, errors.New("official license end at not found")
+	}
+	authType, _ := res["authType"].(string)
+	value, _ := res["value"].(string)
+	if strings.TrimSpace(authType) == "" || strings.TrimSpace(value) == "" {
+		return nil, errors.New("official license auth metadata not found")
+	}
+	return &pluginAuthCipherResult{
+		AuthID:     authID,
+		EndAt:      endAt,
+		AuthType:   authType,
+		Value:      value,
+		AuthCipher: authCipher,
+	}, nil
 }
 
 func verifiedPluginAuth(code string) (*pluginAuthPlain, error) {
@@ -91,46 +111,70 @@ func verifiedPluginAuth(code string) (*pluginAuthPlain, error) {
 	if err != nil {
 		return nil, err
 	}
-	plain, err := decryptPluginAuthCipher(res.AuthCipher)
+	digest, err := decryptPluginAuthCipher(res.AuthCipher)
 	if err != nil {
 		return nil, err
 	}
-	if plain.AuthID != res.AuthID || plain.Code != code {
+	plain := buildPluginFeatureDigestPlain(res.AuthID, res.EndAt, code, res.AuthType, res.Value)
+	sum := sha256.Sum256([]byte(plain))
+	if !bytesEqual(sum[:], digest) {
 		return nil, errors.New("official license unauthorized")
 	}
-	return plain, nil
+	if res.EndAt <= 0 || time.Now().Unix() > res.EndAt {
+		return nil, errors.New("official license unauthorized")
+	}
+	return &pluginAuthPlain{
+		AuthID:   res.AuthID,
+		EndAt:    res.EndAt,
+		AuthType: res.AuthType,
+		Value:    res.Value,
+		Code:     code,
+	}, nil
 }
 
-func decryptPluginAuthCipher(cipherText string) (*pluginAuthPlain, error) {
+func decryptPluginAuthCipher(cipherText string) ([]byte, error) {
 	pub, err := parsePluginPublicKey(pluginPubKey)
 	if err != nil {
 		return nil, err
 	}
-	data, err := publicDecryptBase64(pub, cipherText)
-	if err != nil {
-		return nil, err
+	return publicDecryptBase64(pub, cipherText)
+}
+
+func buildPluginFeatureDigestPlain(authID string, endAt int64, code string, authType string, value string) string {
+	return strings.Join([]string{
+		"auth_id=" + authID,
+		"end_at=" + strconv.FormatInt(endAt, 10),
+		"code=" + code,
+		"type=" + authType,
+		"value=" + value,
+	}, "\n")
+}
+
+func bytesEqual(a []byte, b []byte) bool {
+	if len(a) != len(b) {
+		return false
 	}
-	plain := &pluginAuthPlain{}
-	for _, line := range strings.Split(string(data), "\n") {
-		key, value, ok := strings.Cut(line, "=")
-		if !ok {
-			continue
-		}
-		switch key {
-		case "auth_id":
-			plain.AuthID = value
-		case "code":
-			plain.Code = value
-		case "type":
-			plain.Type = value
-		case "value":
-			plain.Value = value
-		}
+	var diff byte
+	for i := range a {
+		diff |= a[i] ^ b[i]
 	}
-	if plain.AuthID == "" || plain.Code == "" || plain.Type == "" || plain.Value == "" {
-		return nil, errors.New("official license auth cipher invalid")
+	return diff == 0
+}
+
+func parseJSONInt64(value interface{}) int64 {
+	switch v := value.(type) {
+	case float64:
+		return int64(v)
+	case int64:
+		return v
+	case int:
+		return int64(v)
+	case string:
+		n, _ := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+		return n
+	default:
+		return 0
 	}
-	return plain, nil
 }
 
 func parsePluginPublicKey(src string) (*rsa.PublicKey, error) {

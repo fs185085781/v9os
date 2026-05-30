@@ -43,6 +43,8 @@ export const contextMenuStore = defineStore("contextMenu", () => {
     y: 0,
     context: null,
     items: [],
+    submenuDirection: "right",
+    submenuTopMap: {},
     clipboard: {
       source: "",
       items: [],
@@ -113,6 +115,9 @@ export const contextMenuStore = defineStore("contextMenu", () => {
   };
 
   const sortItems = (items) => {
+    if (items.some((item) => item?.type === "header" || item?.type === "separator")) {
+      return items;
+    }
     return items.sort((a, b) => {
       const groupA = groupOrder[a.group || "main"] || 50;
       const groupB = groupOrder[b.group || "main"] || 50;
@@ -136,6 +141,15 @@ export const contextMenuStore = defineStore("contextMenu", () => {
       }
       if (item.type === "separator") {
         result.push(item);
+        continue;
+      }
+      if (item.type === "header" || item.header) {
+        result.push({
+          ...item,
+          type: "header",
+          label: callMaybe(item.label, ctx) || "",
+          disabled: true,
+        });
         continue;
       }
       if (item.capability && !hasCapability(ctx, item.capability)) {
@@ -186,11 +200,14 @@ export const contextMenuStore = defineStore("contextMenu", () => {
   const calcMenuHeight = (items = []) => {
     const itemHeight = 32;
     const separatorHeight = 12;
+    const headerHeight = 28;
     const padding = 12;
     let height = padding;
     for (const item of items) {
       if (item?.type === "separator") {
         height += separatorHeight;
+      } else if (item?.type === "header") {
+        height += headerHeight;
       } else {
         height += itemHeight;
       }
@@ -198,13 +215,64 @@ export const contextMenuStore = defineStore("contextMenu", () => {
     return Math.max(48, height);
   };
 
+  const hasChildren = (items = []) => items.some((item) => item?.children?.length);
+
+  const calcSubmenuTopMap = (menuY, items = []) => {
+    const itemHeight = 32;
+    const separatorHeight = 12;
+    const headerHeight = 28;
+    const padding = 8;
+    const submenuBottomSafeOffset = 12;
+    const map = {};
+    let itemTop = 6;
+    for (const item of items) {
+      if (item?.type === "separator") {
+        itemTop += separatorHeight;
+        continue;
+      }
+      if (item?.type === "header") {
+        itemTop += headerHeight;
+        continue;
+      }
+      if (item?.children?.length) {
+        const submenuHeight = Math.min(calcMenuHeight(item.children), window.innerHeight - padding * 2);
+        const overflow = menuY + itemTop + submenuHeight - (window.innerHeight - padding - submenuBottomSafeOffset);
+        const minTopOffset = padding - (menuY + itemTop);
+        const topOffset = overflow > 0 ? Math.max(-overflow, minTopOffset) : 0;
+        map[item.key] = `${topOffset}px`;
+      }
+      itemTop += itemHeight;
+    }
+    return map;
+  };
+
   const fixPosition = (x, y, items = []) => {
     const width = 240;
+    const submenuWidth = 240;
+    const gap = 0;
+    const padding = 8;
+    const hasSubmenu = hasChildren(items);
     const height = calcMenuHeight(items);
     const offsetY = y - 45;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let menuX = Math.max(padding, Math.min(x, viewportWidth - width - padding));
+    const rightSpace = viewportWidth - (menuX + width) - padding;
+    const leftSpace = menuX - padding;
+    let submenuDirection = "right";
+
+    if (hasSubmenu && rightSpace < submenuWidth + gap && leftSpace >= submenuWidth + gap) {
+      submenuDirection = "left";
+    } else if (hasSubmenu && rightSpace < submenuWidth + gap) {
+      menuX = Math.max(padding, viewportWidth - width - submenuWidth - gap - padding);
+      submenuDirection = "right";
+    }
+
     return {
-      x: Math.min(x, window.innerWidth - width - 8),
-      y: Math.max(8, Math.min(offsetY, window.innerHeight - height - 8)),
+      x: menuX,
+      y: Math.max(padding, Math.min(offsetY, viewportHeight - height - padding)),
+      submenuDirection,
     };
   };
 
@@ -242,6 +310,8 @@ export const contextMenuStore = defineStore("contextMenu", () => {
     state.items = items;
     state.x = point.x;
     state.y = point.y;
+    state.submenuDirection = point.submenuDirection || "right";
+    state.submenuTopMap = calcSubmenuTopMap(point.y, items);
     state.show = true;
   };
 
@@ -249,6 +319,7 @@ export const contextMenuStore = defineStore("contextMenu", () => {
     state.show = false;
     state.context = null;
     state.items = [];
+    state.submenuTopMap = {};
   };
 
   const run = async (item) => {
@@ -273,6 +344,9 @@ export const contextMenuStore = defineStore("contextMenu", () => {
       if (iframe) {
         iframe.postMessage(
           {
+            __v9os: true,
+            version: 1,
+            channel: "plugin",
             action: "context-menu-action",
             data: {
               actionId: item.actionId,
@@ -296,6 +370,12 @@ export const contextMenuStore = defineStore("contextMenu", () => {
       if (typeof next.action === "string" && !next.actionId) {
         next.actionId = next.action;
         delete next.action;
+      }
+      if (next.header) {
+        next.type = "header";
+      }
+      if (next.icon && !next.iconUrl) {
+        next.iconUrl = next.icon;
       }
       if (next.children) {
         next.children = normalizePluginItems(next.children);

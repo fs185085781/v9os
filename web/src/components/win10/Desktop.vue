@@ -1,6 +1,6 @@
 <script setup>
 import { defineAsyncComponent, computed, onMounted, onUnmounted, ref } from "vue";
-import { getWinSize } from "@/util/util.js";
+import { getWinSize, absoluteUrl } from "@/util/util.js";
 import { LinkOutlined, SkinOutlined } from "@vicons/antd";
 import { renderIcon } from "@/util/icon";
 
@@ -134,12 +134,12 @@ const wallPaper = computed(
     <img
       v-if="wallPaper.DefaultWallpaperType == 'image' && wallPaper.DefaultWallpaper"
       class="w-100vw h-100vh object-cover fixed z--1 pointer-events-none"
-      :src="wallPaper.DefaultWallpaper"
+      :src="absoluteUrl(wallPaper.DefaultWallpaper)"
     />
     <video
       v-if="wallPaper.DefaultWallpaperType == 'video' && wallPaper.DefaultWallpaper"
       class="w-100vw h-100vh object-cover fixed z--1 pointer-events-none"
-      :src="wallPaper.DefaultWallpaper"
+      :src="absoluteUrl(wallPaper.DefaultWallpaper)"
       autoplay
       muted
       loop

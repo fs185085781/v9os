@@ -152,7 +152,7 @@ const openProfileTab = () => {
     height: sz.height,
     title: $tc("backend.layout.profile"),
     component: defineAsyncComponent(
-      () => import("@/components/common/modules/settings/ProfileTab.vue"),
+      () => import("@/components/common/component/user/profile/profile.vue"),
     ),
     data: {},
   });

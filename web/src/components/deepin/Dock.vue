@@ -13,7 +13,7 @@ import { useStore } from "@/stores/user.js";
 import { useEventBus } from "@/util/event.js";
 import ChatNotifyPopover from "@/components/common/component/user/chat/ChatNotifyPopover.vue";
 import { openDesktopShortcutWin } from "@/components/common/modules/desktop/shortcut.js";
-import IconView from "@/components/common/IconView.vue";
+import IconView from "@/components/common/component/util/IconView.vue";
 
 const store = useStore();
 const LaunchPad = defineAsyncComponent(() => import("./LaunchPad.vue"));

@@ -66,7 +66,19 @@ func (o *AllPluginManage) Switch(ptype int) IPluginManage {
 	}
 }
 
+func (o *AllPluginManage) InstallRemoteApp(info RemoteAppInstallInfo) (*plugin.Plugin, error) {
+	m, ok := o.frame.(*framePluginManage)
+	if !ok || m == nil {
+		return nil, fmt.Errorf("frame plugin manager not found")
+	}
+	return m.InstallRemoteApp(info)
+}
+
 func (o *commonPluginManage) cleanupOrphanPluginDirs(all *AllPluginManage, cfg config.Config, log logger.Logger) {
+	provider := ioc.Ioc().Get(ioc.KeyDistributedProvider).(distributed.DistributedProvider)
+	if !provider.Enabled() {
+		return
+	}
 	if all == nil {
 		return
 	}
@@ -80,7 +92,7 @@ func (o *commonPluginManage) cleanupOrphanPluginDirs(all *AllPluginManage, cfg c
 	}
 	localAllowedPlugins := map[string]struct{}{}
 	useMachineWhitelist := false
-	if provider, ok := ioc.Ioc().Get(ioc.KeyDistributedProvider).(distributed.DistributedProvider); ok && provider.Enabled() && cfg != nil {
+	if cfg != nil {
 		useMachineWhitelist = true
 		var machine struct {
 			AllowedPluginCodes string `gorm:"column:allowed_plugin_codes"`
@@ -293,13 +305,14 @@ func (o *commonPluginManage) upsertPluginModel(pluginModel *plugin.Plugin) error
 		"remark":        pluginModel.Remark,
 		"version":       pluginModel.Version,
 		"plugin_type":   pluginModel.PluginType,
-		"interceptors":  pluginModel.Interceptors,
 		"web_hook":      pluginModel.WebHook,
 		"limit_version": pluginModel.LimitVersion,
-		"need_login":    pluginModel.NeedLogin,
 		"icon_url":      pluginModel.IconUrl,
 		"access_url":    pluginModel.AccessUrl,
 		"debug_port":    pluginModel.DebugPort,
+		"open_exts":     pluginModel.OpenExts,
+		"edit_exts":     pluginModel.EditExts,
+		"expand_exts":   pluginModel.ExpandExts,
 	}
 	return db.Model(&plugin.Plugin{}).Where("code = ?", pluginModel.Code).Updates(updates).Error
 }
@@ -341,13 +354,14 @@ type packageManifest struct {
 	Remark       string `json:"Remark"`
 	Version      string `json:"Version"`
 	PluginType   int    `json:"PluginType,string"`
-	Interceptors string `json:"Interceptors"`
 	WebHook      string `json:"WebHook"`
 	LimitVersion string `json:"LimitVersion"`
-	NeedLogin    int    `json:"NeedLogin,string"`
 	IconUrl      string `json:"IconUrl"`
 	ThirdPort    int    `json:"ThirdPort,string"`
 	DebugPort    int    `json:"DebugPort,string"`
+	OpenExts     string `json:"OpenExts"`
+	EditExts     string `json:"EditExts"`
+	ExpandExts   string `json:"ExpandExts"`
 }
 
 func (m *packageManifest) normalize(expectedCode string, expectedType int, cfg config.Config) error {
@@ -372,7 +386,7 @@ func (m *packageManifest) normalize(expectedCode string, expectedType int, cfg c
 	if m.Version == "" {
 		m.Version = "0.0.0"
 	}
-	if expectedType == 3 && m.FirstMachine == "" && cfg != nil {
+	if expectedType == 3 && cfg != nil {
 		m.FirstMachine = cfg.Machine().MachineId
 	}
 	return nil
@@ -390,12 +404,13 @@ func (m *packageManifest) toPluginModel() plugin.Plugin {
 		Remark:       m.Remark,
 		Version:      m.Version,
 		PluginType:   m.PluginType,
-		Interceptors: m.Interceptors,
 		WebHook:      m.WebHook,
 		LimitVersion: m.LimitVersion,
-		NeedLogin:    m.NeedLogin,
 		IconUrl:      m.IconUrl,
 		DebugPort:    m.DebugPort,
+		OpenExts:     m.OpenExts,
+		EditExts:     m.EditExts,
+		ExpandExts:   m.ExpandExts,
 	}
 }
 

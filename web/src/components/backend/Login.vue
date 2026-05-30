@@ -119,15 +119,12 @@ const userDefaultWallpaper = (data) => {
           <h1 class="text-2xl font-bold user-color-ftext">
             {{ $user.webSettings.Title }}
           </h1>
-          <p class="text-sm user-color-ftext mt-2">
-            {{ $user.webSettings.Subtitle }}
-          </p>
         </div>
 
         <!-- 账号登录标题 -->
         <div class="text-center mb-3">
           <h2 class="text-2xl font-bold user-color-ftext">
-            欢迎登录,请登录您的账号
+            欢迎回来,请登录您的账号
           </h2>
         </div>
         <!-- 登录组件占位 -->

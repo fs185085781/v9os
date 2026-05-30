@@ -31,8 +31,6 @@ api/internal/model/
 ```go
 package your_menu
 
-import "github.com/fs185085781/v9os/internal/model/base"
-
 // @model name=业务任务
 type Task struct {
     base.BaseModel

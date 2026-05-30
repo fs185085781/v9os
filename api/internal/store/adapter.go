@@ -8,6 +8,7 @@ type Store interface {
 	GetAppsByCategory(category string, page, pageSize int) (*AppListResult, error)
 	SearchApps(keyword string, page, pageSize int) (*AppListResult, error)
 	GetAppDetail(code string) (*AppInfo, error)
+	GetAppInstallDetail(code string) (*AppInstallInfo, error)
 	GetAppVersions(code string) ([]AppVersion, error)
 	GetFontUrl(font string, ui string) string
 	GetFontOptions() ([]FontOption, error)
@@ -48,35 +49,29 @@ type Category struct {
 	Name string `json:"name"`
 	Icon string `json:"icon"`
 }
-
 type AppInfo struct {
 	Code         string   `json:"code"`
 	Name         string   `json:"name"`
 	Description  string   `json:"description"`
 	IconUrl      string   `json:"iconUrl"`
 	Author       string   `json:"author"`
-	Remark       string   `json:"remark"`
 	Version      string   `json:"version"`
 	StoreVersion string   `json:"storeVersion"`
 	Category     string   `json:"category"`
 	Screenshots  []string `json:"screenshots"`
 	PluginType   int      `json:"pluginType"`
 	LimitVersion string   `json:"limitVersion"`
-	FirstMachine string   `json:"firstMachine"`
-	RuntimeError string   `json:"runtimeError"`
-	CloseDelay   int      `json:"closeDelay"`
-	Status       int      `json:"status"`
-	NeedLogin    int      `json:"needLogin"`
-	Interceptors string   `json:"interceptors"`
-	WebHook      string   `json:"webHook"`
-	AccessUrl    string   `json:"accessUrl"`
-	DebugPort    int      `json:"debugPort"`
 
 	Packages         []AppPackage `json:"packages"`
 	Installable      bool         `json:"installable"`
 	InstallReason    string       `json:"installReason"`
 	Installed        bool         `json:"installed"`
 	InstalledVersion string       `json:"installedVersion"`
+}
+
+type AppInstallInfo struct {
+	AppInfo
+	AccessUrl string `json:"accessUrl"`
 }
 
 type AppVersion struct {

@@ -10,14 +10,14 @@ const Backend = defineAsyncComponent(
   () => import("./components/backend/App.vue"),
 );
 const Expand = defineAsyncComponent(
-  () => import("./components/common/Expand.vue"),
+  () => import("./components/common/component/util/Expand.vue"),
 );
 const user = useStore();
 import "@unocss/reset/tailwind.css";
 import "uno.css";
 import "./main.css";
 import emitter from "@/util/event.js";
-import { delayAction } from "@/util/util.js";
+import { delayAction,postData } from "@/util/util.js";
 document.addEventListener("mousedown", (event) => {
   emitter.emit("document-click", event.target);
 });
@@ -25,10 +25,7 @@ import { websocketStore } from "@/stores/websocket.js";
 import { webhookStore } from "@/stores/webhook.js";
 import { windowsStore } from "@/stores/windows.js";
 import { contextMenuStore } from "@/stores/contextMenu.js";
-windowsStore();
-contextMenuStore().init();
-websocketStore();
-webhookStore().refresh();
+
 const expandUrl = ref("");
 const initExpand = () => {
   const url = new URL(window.location.href);
@@ -36,12 +33,16 @@ const initExpand = () => {
     expandUrl.value = url.searchParams.get("url");
   }
 };
-initExpand();
 const KernelUpgradeIndex = ref(null);
-onMounted(() => {
+onMounted(async () => {
+  initExpand();
+  windowsStore();
+  contextMenuStore().init();
+  websocketStore();
+  webhookStore().refresh();
   delayAction(() => {
     return $user.user && $user.user.ID > 0
-  },() => {
+  }, () => {
     const mod = window.__INFACE_MODS__?.["/src/components/common/inface/kernel_update_ee/index.vue"];
     if (mod && $user.user && $user.user.ID > 0 && $user.user.IsAdmin == 1) {
       KernelUpgradeIndex.value = defineAsyncComponent(mod);

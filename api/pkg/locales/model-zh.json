@@ -78,15 +78,14 @@
       "code": "插件编码",
       "debug_port": "调试端口",
       "description": "插件描述",
+      "edit_exts": "编辑格式",
+      "expand_exts": "扩展格式",
       "first_machine": "安装机器",
       "icon_url": "图标url",
-      "interceptors": "拦截器",
       "limit_version": "限制最低主程序版本",
       "model": "插件",
       "name": "插件名称",
-      "need_login": "需要登录才可访问",
-      "need_login_select_0": "不需要",
-      "need_login_select_1": "需要",
+      "open_exts": "打开格式",
       "plugin_type": "插件类型",
       "plugin_type_select_1": "主程序插件",
       "plugin_type_select_2": "前端插件",
@@ -157,14 +156,6 @@
       "text_field4": "文本字段4",
       "text_field5": "文本字段5",
       "user_id": "用户ID"
-    },
-    "plugin_feature": {
-      "content": "功能内容",
-      "enabled": "状态",
-      "enabled_select_0": "禁用",
-      "enabled_select_1": "启用",
-      "model": "插件功能",
-      "plugin_code": "插件编码"
     },
     "plugin_table": {
       "data_length": "表数量",

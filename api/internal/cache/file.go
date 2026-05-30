@@ -174,6 +174,17 @@ func (r *fileLock) GetVal() string {
 	return r.val
 }
 
+func (r *fileLock) IsAlive() bool {
+	mu, exists := r.cache.locks.Load(r.key)
+	if !exists {
+		return false
+	}
+	cur := mu.(*currentFileLock)
+	cur.mu.Lock()
+	defer cur.mu.Unlock()
+	return cur.lock != nil && cur.lock.val == r.val
+}
+
 func (f *fileLock) Lock() {
 	mu, _ := f.cache.locks.LoadOrStore(f.key, &currentFileLock{
 		lock:      f,

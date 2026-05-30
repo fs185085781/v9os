@@ -59,10 +59,16 @@ func parseArgs() (int, int) {
 	return port, 0
 }
 func Server(name string, staticFiles embed.FS) {
-	ServerFn(name, staticFiles, nil)
+	ServerAfterAction(name, staticFiles, nil)
+}
+func ServerAfterAction(name string, staticFiles embed.FS, fn func()) {
+	ServerCallDataScopeAndAfterAction(name, staticFiles, nil, fn)
+}
+func ServerCallDataScope(name string, staticFiles embed.FS, fn func(userID, deptID, dataScope string)) {
+	ServerCallDataScopeAndAfterAction(name, staticFiles, fn, nil)
 }
 
-func ServerFn(name string, staticFiles embed.FS, fn func(userID, deptID, dataScope string)) {
+func ServerCallDataScopeAndAfterAction(name string, staticFiles embed.FS, fn func(userID, deptID, dataScope string), fn2 func()) {
 	code = name
 	port, exitCode := parseArgs()
 	if exitCode != 0 {
@@ -150,6 +156,9 @@ func ServerFn(name string, staticFiles embed.FS, fn func(userID, deptID, dataSco
 	}
 	AutoMigrate()
 	reportActions()
+	if fn2 != nil {
+		fn2()
+	}
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		os.Exit(4)
@@ -312,6 +321,10 @@ func httpPostResp(uri string, data map[string]interface{}) (*http.Response, erro
 	resp, err := http.Post(targetUrl, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		defer resp.Body.Close()
+		return nil, fmt.Errorf("请求出错:%d", resp.StatusCode)
 	}
 	return resp, nil
 }

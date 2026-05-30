@@ -8,16 +8,16 @@ const props = defineProps({ winId: { type: String, default: "" } });
 const itemIconSize = 28;
 
 const ProfileTab = defineAsyncComponent(
-  () => import("../common/modules/settings/ProfileTab.vue"),
+  () => import("@/components/common/component/user/profile/profile.vue"),
 );
 const PersonalizeTab = defineAsyncComponent(
-  () => import("../common/modules/settings/PersonalizeTab.vue"),
+  () => import("@/components/common/modules/settings/PersonalizeTab.vue"),
 );
 const SystemSettingsPanel = defineAsyncComponent(
-  () => import("../common/modules/settings/SystemSettingsPanel.vue"),
+  () => import("@/components/common/modules/settings/SystemSettingsPanel.vue"),
 );
 const ConfigSettingsPanel = defineAsyncComponent(
-  () => import("../common/modules/settings/ConfigSettingsPanel.vue"),
+  () => import("@/components/common/modules/settings/ConfigSettingsPanel.vue"),
 );
 
 const selectedKey = ref("account");

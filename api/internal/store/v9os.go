@@ -79,6 +79,12 @@ func (v *v9osStore) GetAppDetail(code string) (*AppInfo, error) {
 	return &result, err
 }
 
+func (v *v9osStore) GetAppInstallDetail(code string) (*AppInstallInfo, error) {
+	var result AppInstallInfo
+	err := v.getJSON("/api/store/app/"+code, nil, &result)
+	return &result, err
+}
+
 func (v *v9osStore) GetAppVersions(code string) ([]AppVersion, error) {
 	var result []AppVersion
 	err := v.getJSON("/api/store/app/"+code+"/versions", nil, &result)

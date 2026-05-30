@@ -78,15 +78,14 @@
       "code": "Plugin Code",
       "debug_port": "Debug Port",
       "description": "Plugin Description",
+      "edit_exts": "Edit Format",
+      "expand_exts": "Expand Format",
       "first_machine": "First Install Machine",
       "icon_url": "Icon URL",
-      "interceptors": "Interceptors",
       "limit_version": "Limit Minimum Main Program Version",
       "model": "Plugin",
       "name": "Plugin Name",
-      "need_login": "Need Login to Access",
-      "need_login_select_0": "No",
-      "need_login_select_1": "Yes",
+      "open_exts": "Open Format",
       "plugin_type": "Plugin Type",
       "plugin_type_select_1": "Main Program Plugin",
       "plugin_type_select_2": "Frontend Plugin",
@@ -157,14 +156,6 @@
       "text_field4": "Text Field 4",
       "text_field5": "Text Field 5",
       "user_id": "User ID"
-    },
-    "plugin_feature": {
-      "content": "Feature Content",
-      "enabled": "Status",
-      "enabled_select_0": "Disabled",
-      "enabled_select_1": "Enabled",
-      "model": "PluginFeature",
-      "plugin_code": "Plugin Code"
     },
     "plugin_table": {
       "data_length": "Table Count",

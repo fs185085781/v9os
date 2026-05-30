@@ -1,7 +1,7 @@
 import { reactive, nextTick } from 'vue'
 import { defineStore } from 'pinia'
-import { uuid, postData } from "@/util/util"
-import { useEventBus } from '@/util/event.js';
+import { uuid, postData,getWinSize } from "@/util/util"
+import { onEvent, emitEvent } from '@/util/event.js';
 import emitter from '@/util/event.js';
 export const windowsStore = defineStore('windows', () => {
   const windows = reactive([])
@@ -60,7 +60,7 @@ export const windowsStore = defineStore('windows', () => {
       raiseWindowChain(win)
     }
   }
-  const addWindow = function (win, parentId) {
+  const addWindow = function (win, parentId,closeEvent) {
     
     //如果parentId不为空,则是子窗口,子窗口不支持最小化,不支持最大化,不支持调节尺寸
     let fyWin = null;
@@ -105,7 +105,13 @@ export const windowsStore = defineStore('windows', () => {
       fyWin.id = win.id || uuid()
       windows.push(fyWin)
     }
+    if(!fyWin.width || !fyWin.height){
+      const sz = getWinSize();
+      fyWin.width = sz.width
+      fyWin.height = sz.height
+    }
     fyWin.close = false
+    fyWin.closeEvent = closeEvent
     fyWin.active = true
     fyWin.status = "normal"
     fyWin.lastStatus = fyWin.status
@@ -156,9 +162,15 @@ export const windowsStore = defineStore('windows', () => {
     return false
   }
   const closeWindow = (winId) => {
+    cleanupIframeSession(winId)
     const fyWin = windows.filter(x => x.id == winId && !x.close).shift()
     if (!fyWin) {
       return;
+    }
+    if(fyWin.closeEvent && fyWin.closeEvent.name){
+      const data = fyWin.closeEvent.data || {}
+      data.from = "win-close";
+      emitter.emit(fyWin.closeEvent.name, data);
     }
     fyWin.close = true
     fyWin.iframeUrl = ""
@@ -179,86 +191,155 @@ export const windowsStore = defineStore('windows', () => {
     const data = windows.filter(x => x.status == "max" && !x.close).shift()
     return data
   }
-  const initPostMessage = (iframeUi, winId) => {
-    if (!window.__v9osIframes) {
-      window.__v9osIframes = {}
+  const iframeSessions = {}
+  let iframeBridgeInited = false
+  const postToIframe = (iframeWindow, action, data) => {
+    if (!iframeWindow) {
+      return
     }
-    window.__v9osIframes[winId] = iframeUi
-    if (!window._pluginPostData) {
-      window._pluginPostData = async function (module, action, param) {
-        return await postData('../plugin', module + '/' + action, param, 'json')
+    iframeWindow.postMessage({
+      __v9os: true,
+      version: 1,
+      channel: "plugin",
+      action,
+      data,
+    }, "*");
+  }
+  const jsonClone = (data) => {
+    if (data === undefined) {
+      return undefined
+    }
+    try {
+      return JSON.parse(JSON.stringify(data))
+    } catch {
+      return data
+    }
+  }
+  const getValueByPathAdvanced = (targetObj, path) => {
+    if (typeof targetObj !== 'object' || targetObj === null) {
+      return undefined;
+    }
+    if (typeof path !== 'string' || path === '') {
+      return targetObj;
+    }
+    const regex = /\.?([^.[\]]+)|\[(\d+)\]|\["([^"]+)"\]|\['([^']+)'\]/g;
+    const parts = [];
+    let match;
+    while ((match = regex.exec(path)) !== null) {
+      const part = match[1] || match[2] || match[3] || match[4];
+      if (part) {
+        parts.push(part);
       }
     }
-    useEventBus("win-id-get", (msg) => {
-      const iframeWindow = iframeUi.value?.contentWindow
-      if (!iframeWindow) {
-        return
+    let current = targetObj;
+    for (const part of parts) {
+      if (current == null) {
+        return undefined;
       }
-      iframeWindow.postMessage({ action: "win-id-get", data: { id: winId } }, "*");
+      current = current[part];
+    }
+    return current;
+  }
+  const getSession = (winId) => iframeSessions[winId]
+  const cleanupIframeSession = (winId) => {
+    const session = getSession(winId)
+    if (!session) {
+      return
+    }
+    session.closed = true
+    session.eventForwards.forEach((off) => off())
+    session.eventForwards.clear()
+  }
+  const ensureIframeBridge = () => {
+    if (iframeBridgeInited) {
+      return
+    }
+    iframeBridgeInited = true
+    onEvent("win-id-get", (msg) => {
+      const entries = Object.values(iframeSessions)
+      entries.forEach((session) => {
+        const iframeWindow = session.iframeUi.value?.contentWindow
+        if (!iframeWindow) {
+          return
+        }
+        postToIframe(iframeWindow, "win-id-get", { id: session.winId, webHost: window.location.origin })
+      })
     })
-    useEventBus("iframe-invoke", async (msg) => {
-      if (msg.winId != winId) {
+    onEvent("iframe-invoke", async (msg) => {
+      const session = getSession(msg?.winId)
+      if (!session) {
         return
       }
-      const iframeWindow = iframeUi.value?.contentWindow
+      const iframeWindow = session.iframeUi.value?.contentWindow
       if (!iframeWindow) {
         return
       }
       try {
         const obj = getValueByPathAdvanced(window, msg.entity)
         let res
+        if (!obj) {
+          throw new Error(`entity not found: ${msg.entity}`)
+        }
         if (typeof obj[msg.method] == "function") {
-          res = await obj[msg.method](...msg.param)
+          res = await obj[msg.method](...(msg.param || []))
         } else {
           res = await obj[msg.method]
         }
-        res = JSON.parse(JSON.stringify(res));
-        iframeWindow.postMessage({ action: "iframe-invoke", data: { taskId: msg.taskId, res, code: 0 } }, "*");
+        postToIframe(iframeWindow, "iframe-invoke", { taskId: msg.taskId, res: jsonClone(res), code: 0 })
       } catch (err) {
-        iframeWindow.postMessage({ action: "iframe-invoke", data: { taskId: msg.taskId, msg: err.message, code: -1 } }, "*");
+        postToIframe(iframeWindow, "iframe-invoke", { taskId: msg.taskId, msg: err?.message || String(err), code: -1 })
       }
     })
-    useEventBus("iframe-event-on", async (msg) => {
-      if (msg.winId != winId) {
+    onEvent("iframe-event-on", async (msg) => {
+      const session = getSession(msg?.winId)
+      if (!session || !msg?.eventName) {
         return
       }
-      const iframeWindow = iframeUi.value?.contentWindow
-      if (!iframeWindow) {
-        return
+      const key = msg.eventName
+      if (!session.eventForwards.has(key)) {
+        const off = onEvent(key, (data) => {
+          const current = getSession(session.winId)
+          const iframeWindow = current?.iframeUi.value?.contentWindow
+          if (!current || !iframeWindow) {
+            off()
+            session.eventForwards.delete(key)
+            return
+          }
+          postToIframe(iframeWindow, "iframe-event-on", { eventName: key, data: jsonClone(data) })
+        })
+        session.eventForwards.set(key, off)
       }
-      useEventBus(msg.eventName, (data) => {
-        iframeWindow.postMessage({ action: "iframe-event-on", data: { eventName: msg.eventName, data } }, "*");
-      })
-      if (msg.eventName == "personalChange") {
+      if (key == "personalChange") {
         const settings = $user.settings
-        emitter.emit(msg.eventName, { "Theme": settings.Theme, "Color": settings.Color, "Round": settings.Round, "Lang": settings.Lang, "Mode": settings.Mode, "Font": settings.Font, "ColorDesc": settings.ColorDesc })
+        emitEvent(key, { "Theme": settings.Theme, "Color": settings.Color, "Round": settings.Round, "Lang": settings.Lang, "Mode": settings.Mode, "Font": settings.Font, "ColorDesc": settings.ColorDesc })
       }
     })
-    const getValueByPathAdvanced = (targetObj, path) => {
-      if (typeof targetObj !== 'object' || targetObj === null) {
-        return undefined;
+    onEvent("iframe-event-off", async (msg) => {
+      const session = getSession(msg?.winId)
+      if (!session || !msg?.eventName) {
+        return
       }
-      if (typeof path !== 'string' || path === '') {
-        return targetObj;
+      const off = session.eventForwards.get(msg.eventName)
+      if (off) {
+        off()
+        session.eventForwards.delete(msg.eventName)
       }
-      const regex = /\.?([^.[\]]+)|\[(\d+)\]|\["([^"]+)"\]|\['([^']+)'\]/g;
-      const parts = [];
-      let match;
-      while ((match = regex.exec(path)) !== null) {
-        const part = match[1] || match[2] || match[3] || match[4];
-        if (part) {
-          parts.push(part);
-        }
-      }
-      let current = targetObj;
-      for (const part of parts) {
-        if (current == null) {
-          return undefined;
-        }
-        current = current[part];
-      }
-      return current;
+    })
+  }
+  const initPostMessage = (iframeUi, winId) => {
+    if (!window.__v9osIframes) {
+      window.__v9osIframes = {}
     }
+    window.__v9osIframes[winId] = iframeUi
+    iframeSessions[winId] = iframeSessions[winId] || { winId, iframeUi, eventForwards: new Map(), closed: false }
+    iframeSessions[winId].iframeUi = iframeUi
+    iframeSessions[winId].closed = false
+    if (!window._pluginPostData) {
+      window._pluginPostData = async function (module, action, param) {
+        return await postData('../plugin', module + '/' + action, param, 'json')
+      }
+    }
+    ensureIframeBridge()
   }
   const winStatusChange = (winData, status, tapOnWindow) => {
     if (winData.parentId && (status == "max" || status == "min")) {

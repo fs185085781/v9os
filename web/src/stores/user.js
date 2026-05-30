@@ -2,7 +2,7 @@ import { reactive, ref, defineAsyncComponent, computed } from "vue";
 import { defineStore } from "pinia";
 import { darkTheme, zhCN, dateZhCN, enUS, dateEnUS } from "naive-ui";
 import { loadLocaleMessages } from "@/locales";
-import { postData, getApiHost, lockFn, postBlob } from "@/util/util";
+import { postData, lockFn, postBlob, absoluteUrl } from "@/util/util";
 import { MessageOutlined } from "@vicons/antd";
 import { DataUsage20Regular } from "@vicons/fluent";
 import { renderIcon } from "@/util/icon";
@@ -50,12 +50,11 @@ export const useStore = defineStore("user", () => {
   });
   //Color,Round,Lang,Mode,Theme,Font,Transparent
   const loadUser = async () => {
-    const ah = await getApiHost();
     let res = await postData("system", "settingsGet", {}, "");
     if (res) {
       webSettings.value = res;
       if (window.__MAIN_FEST_SAVE) {
-        window.__MAIN_FEST_SAVE({ logo: ah + res.Logo, name: res.Title });
+        window.__MAIN_FEST_SAVE({ logo: absoluteUrl(res.Logo), name: res.Title });
         delete window.__MAIN_FEST_SAVE;
       }
       document.title =
@@ -104,7 +103,7 @@ export const useStore = defineStore("user", () => {
     }
     const isV9osApp = window.$util && $util.proxy && $util.proxy.setToken;
     if (isV9osApp) {
-      const res = await postData("user", "proxyToken", { host: ah }, "");
+      const res = await postData("user", "proxyToken", { host: absoluteUrl() }, "");
       if (res) {
         $util.proxy.setToken(res.proxy_host, res.proxy_token);
       }
@@ -364,8 +363,8 @@ export const useStore = defineStore("user", () => {
       };
     });
   };
-  const defaultIcon = function(icon) {
-    return `/assets/${["macos","win10","deepin"].includes(settings.Mode)?settings.Mode:"common"}/img/icons/${icon}.png`;
+  const defaultIcon = function (icon) {
+    return `/assets/${["macos", "win10", "deepin"].includes(settings.Mode) ? settings.Mode : "common"}/img/icons/${icon}.png`;
   }
   const saveDesktopApp = async (app) => {
     const res = await postData("user", "saveDesktopApp", app, "okerr");
@@ -403,6 +402,36 @@ export const useStore = defineStore("user", () => {
       }
     });
   };
+  let moduleList = null;
+  const getPluginApps = async () => {
+    const apps = [];
+    if (!moduleList) {
+      moduleList = await postData("user", "auth-modules", {}, "");
+    }
+    for (const mod of moduleList) {
+      let path = `/page/${mod.code}/`;
+      if (mod.type === 2) {
+        path = `/api/webplugin/${mod.code}/`;
+      } else if (mod.type === 3) {
+        path = `/api/thirdplugin/${mod.code}/`;
+      } else if (mod.type === 4) {
+        path = mod.accessUrl || "";
+      }
+      mod.icon = mod.icon ? absoluteUrl(mod.icon) : defaultIcon("appstore");
+      apps.push({
+        code: mod.code,
+        name: mod.name,
+        icon: mod.icon || defaultIcon("appstore"),
+        type: "plugin",
+        url: absoluteUrl(path),
+        editExts: mod.editExts,
+        openExts: mod.openExts,
+        expandExts: mod.expandExts,
+      });
+    }
+    return apps;
+  }
+
   const getMyApps = async () => {
     const builtinApps = {
       __kernel__: {
@@ -423,7 +452,7 @@ export const useStore = defineStore("user", () => {
       },
       __chat__: {
         code: "__chat__",
-        name: "聊天",
+        name: "聊天与通知",
         icon: renderIcon(MessageOutlined, 40),
         type: "system",
         windowId: "v9os-chat-win",
@@ -439,8 +468,6 @@ export const useStore = defineStore("user", () => {
       apps.push(builtinApps.__settings__);
     }
     if (!myauths.length) { return apps; }
-    const apiHost = await getApiHost();
-    const moduleList = await postData("user", "auth-modules", {}, "");
     const isAll = myauths.includes("all");
     if (isAll || myauths.some((a) => a.startsWith("/api/"))) {
       apps.push(builtinApps.__kernel__);
@@ -451,22 +478,14 @@ export const useStore = defineStore("user", () => {
     if (isAll || myauths.some((a) => a.startsWith("/api/chat_ee/") || a.startsWith("/api/chat/"))) {
       apps.push(builtinApps.__chat__);
     }
-    for (const mod of moduleList) {
-      let path = `/page/${mod.code}/`;
-      if (mod.type === 2) {
-        path = `/api/webplugin/${mod.code}/`;
-      } else if (mod.type === 3) {
-        path = `/api/thirdplugin/${mod.code}/`;
-      } else if (mod.type === 4) {
-        path = mod.accessUrl || "";
-      }
-      mod.icon = mod.icon && mod.icon.startsWith("http") ? mod.icon : mod.icon ? apiHost + mod.icon : defaultIcon("appstore");
+    const pluginApps = await getPluginApps();
+    for (const mod of pluginApps) {
       apps.push({
         code: mod.code,
         name: mod.name,
-        icon: mod.icon || defaultIcon("appstore"),
-        type: "plugin",
-        url: mod.type === 4 ? path : apiHost + path,
+        icon: mod.icon,
+        type: mod.type,
+        url: mod.url
       });
     }
     return apps;
@@ -494,6 +513,7 @@ export const useStore = defineStore("user", () => {
     getDockApps,
     registerBuiltinApps,
     getMyApps,
+    getPluginApps,
     getDesktopApps,
     saveDesktopApp,
     deleteDesktopApp,

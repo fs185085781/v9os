@@ -71,6 +71,10 @@ const noErrFetch = async (req, options = undefined) => {
 };
 self.addEventListener("fetch", (event) => {
   const request = event.request;
+  const requestUrl = new URL(request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
   event.respondWith(
     (async () => {
       let key = await generateCacheKey(request);

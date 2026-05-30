@@ -6,10 +6,18 @@
   document.writeln(`<script src="${host}/assets/core.js"></script>`);
   if (src.includes("naive=true")) {
     document.writeln(
-      `<script src="${host}/assets/naive/vue.global.prod.js"></script>`,
+      `<script src="${host}/assets/expand/vue.global.prod.js"></script>`,
     );
     document.writeln(
-      `<script src="${host}/assets/naive/index.prod.js"></script>`,
+      `<script src="${host}/assets/expand/index.prod.js"></script>`,
+    );
+  }
+  if(src.includes("jquery=true")){
+    document.writeln(
+      `<script src="${host}/assets/expand/jquery.min.js"></script>`,
+    );
+    document.writeln(
+      `<script src="${host}/assets/expand/expand.js"></script>`,
     );
   }
   document.writeln(`<style>::-webkit-scrollbar {width: 8px;height: 8px;}::-webkit-scrollbar-track {background: transparent;}
@@ -19,7 +27,28 @@
   const invokeMap = {};
   const eventMap = {};
   const contextMenuActionMap = {};
+  const hostEventSubscribed = {};
   let contextMenuOpened = false;
+  const postToParent = (action, data) => {
+    parent.postMessage(
+      {
+        __v9os: true,
+        version: 1,
+        channel: "plugin",
+        action,
+        data,
+      },
+      "*",
+    );
+  };
+  const jsonClone = (data) => {
+    if (data === undefined) return undefined;
+    try {
+      return JSON.parse(JSON.stringify(data));
+    } catch (e) {
+      return data;
+    }
+  };
   const colorMap = {
     green: ["#36ad6a", "#18a058", "#0c7a43"],
     blue: ["#4098fc", "#2080f0", "#1060c9"],
@@ -212,7 +241,8 @@
     if (data.action == "win-id-get" && data.data && data.data.id) {
       //获取当前窗口Id
       window.__winId = data.data.id;
-      $v9os.eventOn("personalChange", function (settings) {
+      $v9os.webHost = data.data.webHost;
+      $v9os.event.on("personalChange", function (settings) {
         const currentTheme = $v9os.theme.apply(settings);
         if (window.onPersonalChange) {
           window.onPersonalChange(settings, currentTheme);
@@ -244,6 +274,12 @@
           callback(data.data);
         });
       }
+      Object.keys(contextMenuActionMap).forEach((key) => {
+        if (!key.endsWith("*") || !actionId.startsWith(key.slice(0, -1))) return;
+        contextMenuActionMap[key].forEach((callback) => {
+          callback(data.data);
+        });
+      });
     }
   });
   const tmpMsg = (color, text) => {
@@ -258,7 +294,7 @@
       div.remove();
     }, 3000);
   };
-  const successMsg = (msg) => {
+  const showSuccess = (msg) => {
     if (window.__winId) {
       $v9os.invoke("$msg.message", "success", msg);
     } else {
@@ -269,7 +305,7 @@
       }
     }
   };
-  const errorMsg = (msg) => {
+  const showError = (msg) => {
     if (window.__winId) {
       $v9os.invoke("$msg.message", "error", msg);
     } else {
@@ -281,8 +317,6 @@
     }
   };
   window.$v9os = {
-    successMsg,
-    errorMsg,
     //前端反射跨域调用主程序前端功能
     invoke: (entity, method, ...param) => {
       return new Promise(function (success) {
@@ -295,66 +329,68 @@
           delete invokeMap[taskId];
           success(res);
         };
-        param = JSON.parse(JSON.stringify(param));
-        parent.postMessage(
-          {
-            action: "iframe-invoke",
-            data: {
-              entity,
-              method,
-              param,
-              winId: window.__winId,
-              taskId,
-            },
-          },
-          "*",
-        );
+        param = jsonClone(param);
+        postToParent("iframe-invoke", {
+          entity,
+          method,
+          param,
+          winId: window.__winId,
+          taskId,
+        });
         setTimeout(() => {
           delete invokeMap[taskId];
           success({ code: -1, msg: "执行超时" });
         }, timeout * 1000);
       });
     },
-    eventOn: function (eventName, callback) {
-      if (!window.__winId) {
-        return { code: -1, msg: "该方法必须在v9os iframe环境下使用" };
-      }
-      parent.postMessage(
-        {
-          action: "iframe-event-on",
-          data: { eventName, winId: window.__winId },
-        },
-        "*",
-      );
-      if (!eventMap[eventName]) {
-        eventMap[eventName] = [callback];
-      } else {
-        eventMap[eventName].push(callback);
-      }
-      return { code: 0, msg: "success" };
-    },
-    eventOff: function (eventName, callback) {
-      if (eventMap[eventName]) {
-        if (callback) {
-          eventMap[eventName] = eventMap[eventName].filter(
-            (x) => x != callback,
-          );
-          if (eventMap[eventName].length == 0) {
+    event: {
+      on: function (eventName, callback) {
+        if (!window.__winId) {
+          return { code: -1, msg: "该方法必须在v9os iframe环境下使用" };
+        }
+        if (!eventMap[eventName]) {
+          eventMap[eventName] = [];
+        }
+        if (typeof callback === "function" && !eventMap[eventName].includes(callback)) {
+          eventMap[eventName].push(callback);
+        }
+        if (!hostEventSubscribed[eventName]) {
+          hostEventSubscribed[eventName] = true;
+          postToParent("iframe-event-on", { eventName, winId: window.__winId });
+        }
+        return { code: 0, msg: "success" };
+      },
+      off: function (eventName, callback) {
+        if (eventMap[eventName]) {
+          if (callback) {
+            eventMap[eventName] = eventMap[eventName].filter(
+              (x) => x != callback,
+            );
+            if (eventMap[eventName].length == 0) {
+              delete eventMap[eventName];
+            }
+          } else {
             delete eventMap[eventName];
           }
-        } else {
-          delete eventMap[eventName];
         }
-      }
-      return { code: 0, msg: "success" };
-    },
-    eventEmit: function (eventName, data) {
-      data = JSON.parse(JSON.stringify(data));
-      parent.postMessage({ action: eventName, data }, "*");
-      return { code: 0, msg: "success" };
+        if (!eventMap[eventName] && hostEventSubscribed[eventName]) {
+          delete hostEventSubscribed[eventName];
+          if (window.__winId) {
+            postToParent("iframe-event-off", { eventName, winId: window.__winId });
+          }
+        }
+        return { code: 0, msg: "success" };
+      },
+      emit: function (eventName, data) {
+        postToParent(eventName, jsonClone(data));
+        return { code: 0, msg: "success" };
+      },
     },
     contextMenu: {
       show: async function (options) {
+        if (!window.__winId) {
+          return { code: -1, msg: "该方法必须在v9os iframe环境下使用" };
+        }
         const res = await $v9os.invoke("$contextMenu", "showFromPlugin", window.__winId, options);
         contextMenuOpened = res && res.code === 0;
         return res;
@@ -395,22 +431,23 @@
       },
     },
     theme,
-    hasAuth: function (path) {
-      const that = this;
-      const auths = that.__userAuths || [];
-      $v9os.invoke("$user.auths", "value").then((v) => {
-        that.__userAuths = v.data.auths;
-      })
-      return auths.includes("all") || auths.includes(path);
+    auth: {
+      has: function (path) {
+        const auths = $v9os.__userAuths || [];
+        $v9os.invoke("$user.auths", "value").then((v) => {
+          const list = v && v.code === 0 && v.data && Array.isArray(v.data.auths) ? v.data.auths : [];
+          $v9os.__userAuths = list;
+        })
+        return auths.includes("all") || auths.includes(path);
+      },
     },
-    webDataPost: async function (module, action, param, showType = "err") {
-      return await this.pluginPost("../api/webdata", module + "/" + action, param, showType);
-    },
-    pluginPost: async function (module, action, param, showType = "err", fn) {
-      const that = this;
-      let res;
-      if (window.__winId) {
-        let tmp = await that.invoke(
+    api: {
+      webDataPost: async function (module, action, param, showType = "err") {
+        return await $v9os.api.pluginPost("../api/webdata", module + "/" + action, param, showType);
+      },
+      pluginPost: async function (module, action, param, showType = "err", fn) {
+        let res;
+        let tmp = await $v9os.invoke(
           "window",
           "_pluginPostData",
           module,
@@ -422,32 +459,140 @@
         } else {
           res = { code: tmp.code, msg: tmp.msg };
         }
-      } else {
-        alert("禁止外部调用窗口,窗口即将关闭");
-        window.close();
+        if (fn) {
+          fn(res.msg);
+        }
+        if (showType == "json") {
+          return res;
+        }
+        if (res && res.code === 0) {
+          if (showType === "ok" || showType === "okerr") {
+            showSuccess(res.msg);
+          }
+          if (res.data) {
+            return res.data;
+          }
+          return true;
+        }
+        if (showType === "err" || showType === "okerr") {
+          showError(res.msg);
+        }
         return false;
-      }
-      if (fn) {
-        fn(res.msg);
-      }
-      if (showType == "json") {
-        return res;
-      }
-      if (res && res.code === 0) {
-        if (showType === "ok" || showType === "okerr") {
-          successMsg(res.msg);
-        }
-        if (res.data) {
-          return res.data;
-        }
-        return true;
-      }
-      if (showType === "err" || showType === "okerr") {
-        errorMsg(res.msg);
-      }
-      return false;
+      },
     },
     host,
+    msg: {
+      alert: async function (content, title) {
+        if (!title) {
+          title = "提示"
+        }
+        let res = await $v9os.invoke("$msg.util", "alert", content, title);
+        return res && res.code == 0 && res.data;
+      },
+      confirm: async function (content, title) {
+        if (!title) {
+          title = "提示"
+        }
+        let res = await $v9os.invoke("$msg.util", "confirm", content, title);
+        return res && res.code == 0 && res.data;
+      },
+      prompt: async function (content, title) {
+        if (!title) {
+          title = "提示"
+        }
+        let res = await $v9os.invoke("$msg.util", "prompt", content, title);
+        return res && res.code == 0 && res.data && res.data.trim();
+      },
+      success: showSuccess,
+      error: showError
+    },
+    file: {
+      common: function (relative, title, expand, ext, name, save) {
+        return new Promise(function (success) {
+          const onExpandChange = (msg) => {
+            if (msg?.type !== "fileSelected") {
+              return;
+            }
+            if (msg.winId) {
+              $v9os.invoke(
+                "$wins",
+                "closeWindow",
+                msg.winId
+              );
+            }
+            $v9os.event.off("expand-change", onExpandChange);
+            if (msg.from == "win-close" || !msg.confirm) {
+              success(false);
+              return;
+            }
+            success(msg.data);
+          }
+          $v9os.event.on("expand-change", onExpandChange);
+          if (relative != "true") {
+            relative = "false";
+          }
+          if (!ext) {
+            ext = ""
+          }
+          if (!name) {
+            name = ""
+          }
+          $v9os.invoke(
+            "$wins",
+            "addWindow",
+            {
+              width: 900,
+              height: 620,
+              title: title ? title : "请选择",
+              iframeUrl: `${$v9os.host}/page/file_system/?page=explorer&expand=${expand}&relative=${relative}&ext=${encodeURIComponent(ext)}&name=${encodeURIComponent(name)}&save=${save}`,
+            },
+            window.__winId,
+            {
+              name: "expand-change",
+              data: {
+                type: "fileSelected"
+              }
+            }
+          );
+        });
+      },
+      selectLongDir: function (relative, title) {
+        return this.common(relative, title ? title : "请选择目录", "selectDir")
+      },
+      selectFile: function (relative, title, ext, save) {
+        //ext = png,jpg
+        return this.common(relative, title ? title : "请选择文件", "selectFile", ext, null, save == "true" ? "true" : "false")
+      },
+      selectLongFile: function (relative, title, ext) {
+        //ext = png,jpg
+        return this.common(relative, title ? title : "请选择文件", "selectFile", ext, null, "")
+      },
+      saveFile: async function (title, name, blob) {
+        const postData = await this.common(null, title ? title : "请选择保存目录", "saveFile", null, name);
+        if (!postData) {
+          return false;
+        }
+        return this.saveFileNoSelect(postData, blob)
+      },
+      saveFileNoSelect: async function (postData, blob) {
+        const resp = await fetch(postData.url, {
+          "headers": postData.headers,
+          "body": blob,
+          "method": postData.method
+        });
+        let err = "保存失败"
+        if (resp.ok) {
+          const json = await resp.json()
+          if(json.code == 0){
+            $v9os.msg.success("保存成功");
+            return true;
+          }
+          err = json.msg || err
+        }
+        $v9os.msg.error(err);
+        return false;
+      }
+    }
   };
   const closeContextMenuFromFrame = function () {
     if (window.$v9os && $v9os.contextMenu) {
@@ -459,5 +604,5 @@
   if (window.__personal) {
     theme.apply(window.__personal);
   }
-  parent.postMessage({ action: "win-id-get" }, "*");
+  postToParent("win-id-get");
 })();

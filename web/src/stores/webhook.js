@@ -1,16 +1,15 @@
 import { reactive } from "vue";
 import { defineStore } from "pinia";
-import { getApiHost, postData } from "@/util/util";
+import { absoluteUrl, postData } from "@/util/util";
 
 export const webhookStore = defineStore("webhook", () => {
   const scriptMap = reactive({});
 
   const normalizeSrc = (src, host) => {
-    try {
-      return new URL(src, host).toString();
-    } catch {
+    if(src.startsWith("http") || src.startsWith("//")){
       return src;
     }
+    return host+src;
   };
 
   const removeScript = (code) => {
@@ -27,7 +26,6 @@ export const webhookStore = defineStore("webhook", () => {
   };
 
   const refresh = async () => {
-    const host = await getApiHost();
     const data = await postData("plugin", "webhooks", {}, "");
     const hooks = Array.isArray(data) ? data : [];
     const nextMap = {};
@@ -37,7 +35,7 @@ export const webhookStore = defineStore("webhook", () => {
       }
       nextMap[item.code] = {
         ...item,
-        src: normalizeSrc(item.src, host),
+        src: normalizeSrc(item.src, absoluteUrl()),
       };
     });
 

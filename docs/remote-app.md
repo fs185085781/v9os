@@ -23,7 +23,6 @@
 | `PluginType` | `4` |
 | `AccessUrl` | 远程应用完整 URL |
 | `Status` | `1` 为启用 |
-| `NeedLogin` | 是否要求先登录 V9OS |
 | `IconUrl` | 应用图标 |
 
 远程应用的插件编码可由访问地址生成，也可以由安装流程保存。打开时前端会直接把 `AccessUrl` 作为 iframe 地址。

@@ -11,19 +11,20 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fs185085781/v9os/internal/ioc"
-	"github.com/fs185085781/v9os/internal/ioc/uioc"
 	"github.com/fs185085781/v9os/internal/logger"
 	"github.com/fs185085781/v9os/internal/model/plugin"
 	"github.com/fs185085781/v9os/internal/plugin/manager"
 	"github.com/fs185085781/v9os/pkg/util"
 
 	"github.com/fs185085781/v9os/internal/controller"
+	"github.com/fs185085781/v9os/internal/inface/distributed"
 	"github.com/fs185085781/v9os/internal/store"
 	"github.com/gin-gonic/gin"
 )
@@ -37,6 +38,23 @@ type appStoreInstallRequest struct {
 	Type    string `json:"type"`
 	Code    string `json:"code"`
 	HostURL string `json:"hostUrl"`
+}
+
+type installedAppRuntime struct {
+	AccessUrl string `json:"accessUrl,omitempty"`
+}
+
+type installedAppInfo struct {
+	Code             string               `json:"code"`
+	Name             string               `json:"name"`
+	Description      string               `json:"description"`
+	IconUrl          string               `json:"iconUrl"`
+	Version          string               `json:"version"`
+	PluginType       int                  `json:"pluginType"`
+	LimitVersion     string               `json:"limitVersion"`
+	Installed        bool                 `json:"installed"`
+	InstalledVersion string               `json:"installedVersion"`
+	Runtime          *installedAppRuntime `json:"runtime,omitempty"`
 }
 
 const appStoreInstallMachineProxyHeader = "X-AppStore-Install-Machine-Proxy"
@@ -171,13 +189,26 @@ func (c *AppStoreController) Img(ctx *gin.Context) {
 		c.ErrCode(ctx, http.StatusNotFound, "plugin manager not found")
 		return
 	}
-	logoPath := filepath.Join(pluginManage.PluginDir(code), "logo.png")
-	if _, err := os.Stat(logoPath); err != nil {
-		c.ErrCode(ctx, http.StatusNotFound, err.Error())
+	distributedProvider := c.Distributed()
+	localMachineID := distributedProvider.Nodes().LocalMachineID()
+	if !slices.Contains(distributedProvider.Nodes().GetMachineIds(code), localMachineID) {
+		if ctx.GetHeader(appStoreInstallMachineProxyHeader) == "" && c.proxyPluginImageFromPackageMachine(ctx, pluginModel) {
+			return
+		}
+		c.ErrCode(ctx, http.StatusForbidden, "current machine is not allowed to read plugin icon: "+code)
 		return
 	}
-	ctx.Header("Cache-Control", "public, max-age=31536000")
-	ctx.File(logoPath)
+	logoPath := filepath.Join(pluginManage.PluginDir(code), "logo.png")
+	if _, err := os.Stat(logoPath); err == nil {
+		ctx.Header("Cache-Control", "public, max-age=31536000")
+		ctx.File(logoPath)
+		return
+	} else if ctx.GetHeader(appStoreInstallMachineProxyHeader) == "" {
+		if c.proxyPluginImageFromPackageMachine(ctx, pluginModel) {
+			return
+		}
+	}
+	c.ErrCode(ctx, http.StatusNotFound, "plugin icon not found")
 }
 
 func (c *AppStoreController) Apps(ctx *gin.Context) {
@@ -250,19 +281,25 @@ func (c *AppStoreController) Detail(ctx *gin.Context) {
 
 	var pluginModel plugin.Plugin
 	c.Database().Read().Where("code = ?", code).First(&pluginModel)
+	var installedRuntime *installedAppRuntime
 	if pluginModel.ID > 0 {
 		mergeLocalPluginAppInfo(appInfo, pluginModel)
 		appInfo.Installed = true
 		appInfo.InstalledVersion = pluginModel.Version
+		installedRuntime = pluginRuntimeInfo(pluginModel)
 	} else if storeErr != nil {
 		c.ErrMsg(ctx, storeErr)
 		return
 	}
 	normalizeStoreAppInfo(code, appInfo)
-	c.OkData(ctx, gin.H{
+	resp := gin.H{
 		"app":      appInfo,
 		"versions": versions,
-	})
+	}
+	if installedRuntime != nil {
+		resp["installedRuntime"] = installedRuntime
+	}
+	c.OkData(ctx, resp)
 }
 
 func (c *AppStoreController) Install(ctx *gin.Context) {
@@ -315,11 +352,12 @@ func (c *AppStoreController) Install(ctx *gin.Context) {
 		logger.NewField("type", req.Type),
 		logger.NewField("userID", ctx.GetString("userID")),
 		logger.NewField("proxy", ctx.GetHeader(appStoreInstallMachineProxyHeader) != ""))
-	appInfo, err := c.Store().GetAppDetail(code)
+	installInfo, err := c.Store().GetAppInstallDetail(code)
 	if err != nil {
 		writeError(err)
 		return
 	}
+	appInfo := &installInfo.AppInfo
 	normalizeStoreAppInfo(code, appInfo)
 	targetHost, localInstall, err := c.resolveInstallMachine(ctx, appInfo)
 	if err != nil {
@@ -340,16 +378,20 @@ func (c *AppStoreController) Install(ctx *gin.Context) {
 		return
 	}
 	defer lock.UnLock()
-	pluginManage := c.PluginManage(appInfo.PluginType)
-	if pluginManage == nil {
-		writeFail(c.GetText(ctx, "common.appstore.pluginmanagernotfound"))
-		return
+	if appInfo.PluginType == 4 {
+		_, err = c.installRemoteAppFromStore(installInfo)
+	} else {
+		pluginManage := c.PluginManage(appInfo.PluginType)
+		if pluginManage == nil {
+			writeFail(c.GetText(ctx, "common.appstore.pluginmanagernotfound"))
+			return
+		}
+		_, err = pluginManage.Install(appInfo, manager.InstallOptions{
+			Upgrade:      isUpgrade,
+			AccessOrigin: hostUrl,
+			Progress:     writeProgress,
+		})
 	}
-	_, err = pluginManage.Install(appInfo, manager.InstallOptions{
-		Upgrade:      isUpgrade,
-		AccessOrigin: hostUrl,
-		Progress:     writeProgress,
-	})
 	if err != nil {
 		writeError(err)
 		return
@@ -385,8 +427,7 @@ func (c *AppStoreController) Add(ctx *gin.Context) {
 		c.ErrMsg(ctx, err)
 		return
 	}
-	distributedProvider := c.Distributed()
-	if distributedProvider != nil && distributedProvider.Enabled() {
+	if c.Distributed().Enabled() {
 		c.FailMsg(ctx, "分布式环境请前往分布式监控中心安装本地应用")
 		return
 	}
@@ -433,22 +474,18 @@ func (c *AppStoreController) addRemoteApp(ctx *gin.Context) {
 		c.FailMsg(ctx, "远程应用访问地址无效")
 		return
 	}
-	appInfo := &store.AppInfo{
-		Name:        strings.TrimSpace(ctx.PostForm("name")),
-		Description: strings.TrimSpace(ctx.PostForm("description")),
-		Remark:      strings.TrimSpace(ctx.PostForm("remark")),
-		IconUrl:     strings.TrimSpace(ctx.PostForm("iconUrl")),
-		AccessUrl:   accessURL,
-		Version:     "0.0.0",
-		PluginType:  4,
-		Status:      1,
-	}
-	pluginManage := c.PluginManage(4)
+	pluginManage := iocPluginManage(c)
 	if pluginManage == nil {
 		c.FailMsg(ctx, c.GetText(ctx, "common.appstore.pluginmanagernotfound"))
 		return
 	}
-	pluginModel, err := pluginManage.Install(appInfo, manager.InstallOptions{})
+	pluginModel, err := pluginManage.InstallRemoteApp(manager.RemoteAppInstallInfo{
+		Name:        strings.TrimSpace(ctx.PostForm("name")),
+		Description: strings.TrimSpace(ctx.PostForm("description")),
+		IconUrl:     strings.TrimSpace(ctx.PostForm("iconUrl")),
+		AccessUrl:   accessURL,
+		Version:     "0.0.0",
+	})
 	if err != nil {
 		c.ErrMsg(ctx, err)
 		return
@@ -463,6 +500,27 @@ func iocPluginManage(c *AppStoreController) *manager.AllPluginManage {
 	}
 	all, _ := v.(*manager.AllPluginManage)
 	return all
+}
+
+func (c *AppStoreController) installRemoteAppFromStore(installInfo *store.AppInstallInfo) (*plugin.Plugin, error) {
+	if installInfo == nil {
+		return nil, fmt.Errorf("plugin not found")
+	}
+	pluginManage := iocPluginManage(c)
+	if pluginManage == nil {
+		return nil, fmt.Errorf("plugin manager not found")
+	}
+	accessURL := strings.TrimSpace(installInfo.AccessUrl)
+	if accessURL == "" {
+		return nil, fmt.Errorf("远程应用访问地址不能为空")
+	}
+	return pluginManage.InstallRemoteApp(manager.RemoteAppInstallInfo{
+		Name:        installInfo.Name,
+		Description: installInfo.Description,
+		IconUrl:     installInfo.IconUrl,
+		AccessUrl:   accessURL,
+		Version:     installInfo.Version,
+	})
 }
 
 func validateLocalPackageTarget(pluginType int, osName string, arch string, actualOS string, actualArch string) error {
@@ -505,26 +563,42 @@ func (c *AppStoreController) resolveInstallMachine(ctx *gin.Context, appInfo *st
 		return "", true, nil
 	}
 	distributedProvider := c.Distributed()
-	if distributedProvider == nil || !distributedProvider.Enabled() {
-		return "", true, nil
-	}
 	code := strings.TrimSpace(appInfo.Code)
-	localMachineID := strings.TrimSpace(distributedProvider.Nodes().LocalMachineID())
-	if appStoreMachineAllowsPluginInMemory(localMachineID, code) {
-		appInfo.Installable, appInfo.InstallReason = storeAppInstallability(appInfo)
-		return "", true, nil
+	localMachineID := distributedProvider.Nodes().LocalMachineID()
+	firstMachine := ""
+	var existing plugin.Plugin
+	hasExisting := c.Database().Read().Where("code = ?", code).First(&existing).Error == nil
+	if hasExisting && existing.PluginType == appInfo.PluginType && existing.FirstMachine != "" {
+		firstMachine = existing.FirstMachine
 	}
+	machineIDs := distributedProvider.Nodes().GetMachineIds(code)
 	if ctx.GetHeader(appStoreInstallMachineProxyHeader) != "" {
-		return "", false, fmt.Errorf("current machine is not allowed to install plugin: %s", code)
+		if appInfo.PluginType == 3 && firstMachine != "" && firstMachine != localMachineID {
+			return "", false, fmt.Errorf("current machine is not the first machine of third plugin: %s", code)
+		}
+		if !slices.Contains(machineIDs, localMachineID) {
+			return "", false, fmt.Errorf("current machine is not allowed to install plugin: %s", code)
+		}
+	}
+	if appInfo.PluginType == 3 && firstMachine != "" {
+		return c.resolveSpecificInstallMachine(distributedProvider, appInfo, firstMachine, localMachineID)
+	}
+	localAllowed := slices.Contains(machineIDs, localMachineID)
+	if slices.Contains(machineIDs, localMachineID) {
+		installable, reason := storeAppInstallability(appInfo)
+		appInfo.Installable = installable
+		appInfo.InstallReason = reason
+		if installable {
+			return "", true, nil
+		}
 	}
 	reasons := make([]string, 0)
-	pluginMap := uioc.PluginAllowedMachineMap()
-	for machineID := range pluginMap[code] {
-		if strings.TrimSpace(machineID) == "" || machineID == localMachineID {
+	for _, machineID := range machineIDs {
+		if machineID == "" || machineID == localMachineID {
 			continue
 		}
 		host, ok := distributedProvider.Nodes().Resolve(machineID)
-		if ok && strings.TrimSpace(host) != "" {
+		if ok && host != "" {
 			if machine, ok := distributedProvider.Nodes().Info(machineID); ok {
 				installable, reason := storeAppInstallabilityForTarget(appInfo, machine.OS, machine.Arch)
 				if !installable {
@@ -537,6 +611,9 @@ func (c *AppStoreController) resolveInstallMachine(ctx *gin.Context, appInfo *st
 			return host, false, nil
 		}
 	}
+	if localAllowed && !appInfo.Installable {
+		return "", true, nil
+	}
 	if len(reasons) > 0 {
 		err := fmt.Errorf("plugin %s has no supported online allowed install machine: %s", code, strings.Join(reasons, "; "))
 		c.setPluginRuntimeError(code, err)
@@ -547,6 +624,38 @@ func (c *AppStoreController) resolveInstallMachine(ctx *gin.Context, appInfo *st
 	return "", false, err
 }
 
+func (c *AppStoreController) resolveSpecificInstallMachine(distributedProvider distributed.DistributedProvider, appInfo *store.AppInfo, machineID string, localMachineID string) (string, bool, error) {
+	code := strings.TrimSpace(appInfo.Code)
+	if machineID == "" {
+		return "", false, fmt.Errorf("plugin %s install machine not found", code)
+	}
+	if !slices.Contains(distributedProvider.Nodes().GetMachineIds(code), machineID) {
+		err := fmt.Errorf("plugin %s first machine is not in whitelist: %s", code, machineID)
+		c.setPluginRuntimeError(code, err)
+		return "", false, err
+	}
+	if machine, ok := distributedProvider.Nodes().Info(machineID); ok {
+		installable, reason := storeAppInstallabilityForTarget(appInfo, machine.OS, machine.Arch)
+		if !installable {
+			err := fmt.Errorf("plugin %s first machine %s(%s/%s) is unsupported: %s", code, machineID, machine.OS, machine.Arch, reason)
+			c.setPluginRuntimeError(code, err)
+			return "", false, err
+		}
+		appInfo.Installable = true
+		appInfo.InstallReason = ""
+	}
+	if machineID == localMachineID {
+		return "", true, nil
+	}
+	host, ok := distributedProvider.Nodes().Resolve(machineID)
+	if !ok || host == "" {
+		err := fmt.Errorf("plugin %s first machine is not online: %s", code, machineID)
+		c.setPluginRuntimeError(code, err)
+		return "", false, err
+	}
+	return host, false, nil
+}
+
 func (c *AppStoreController) setPluginRuntimeError(code string, err error) {
 	if strings.TrimSpace(code) == "" || err == nil {
 		return
@@ -554,17 +663,58 @@ func (c *AppStoreController) setPluginRuntimeError(code string, err error) {
 	_ = c.Database().Write().Model(&plugin.Plugin{}).Where("code = ?", code).Update("runtime_error", err.Error()).Error
 }
 
-func appStoreMachineAllowsPluginInMemory(machineID string, pluginCode string) bool {
-	machineID = strings.TrimSpace(machineID)
-	pluginCode = strings.TrimSpace(pluginCode)
-	if machineID == "" || pluginCode == "" {
-		return false
+func (c *AppStoreController) proxyPluginImageFromPackageMachine(ctx *gin.Context, pluginModel plugin.Plugin) bool {
+	distributedProvider := c.Distributed()
+	localMachineID := distributedProvider.Nodes().LocalMachineID()
+	seen := make(map[string]struct{})
+	tryMachine := func(machineID string) bool {
+		if machineID == "" || machineID == localMachineID {
+			return false
+		}
+		if _, ok := seen[machineID]; ok {
+			return false
+		}
+		seen[machineID] = struct{}{}
+		host, ok := distributedProvider.Nodes().Resolve(machineID)
+		if !ok || host == "" {
+			return false
+		}
+		req, err := http.NewRequestWithContext(ctx.Request.Context(), http.MethodGet, "http://"+host+"/api/appstore/img/"+url.PathEscape(pluginModel.Code), nil)
+		if err != nil {
+			return false
+		}
+		req.Header.Set(appStoreInstallMachineProxyHeader, "1")
+		if auth := ctx.Request.Header.Get("Authorization"); auth != "" {
+			req.Header.Set("Authorization", auth)
+		}
+		if lang := ctx.Request.Header.Get("lang"); lang != "" {
+			req.Header.Set("lang", lang)
+		}
+		resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return false
+		}
+		ctx.Header("Cache-Control", "public, max-age=31536000")
+		if contentType := resp.Header.Get("Content-Type"); contentType != "" {
+			ctx.Header("Content-Type", contentType)
+		}
+		ctx.Status(http.StatusOK)
+		_, _ = io.Copy(ctx.Writer, resp.Body)
+		return true
 	}
-	machineMap := uioc.MachineAllowedPluginMap()
-	if machineMap == nil {
-		return false
+	if pluginModel.PluginType == 3 && tryMachine(pluginModel.FirstMachine) {
+		return true
 	}
-	return machineMap[machineID][pluginCode]
+	for _, machineID := range distributedProvider.Nodes().GetMachineIds(pluginModel.Code) {
+		if tryMachine(machineID) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *AppStoreController) proxyAppStoreInstall(ctx *gin.Context, targetHost string, req appStoreInstallRequest, writeError func(error)) {
@@ -655,7 +805,11 @@ func (c *AppStoreController) Installed(ctx *gin.Context) {
 		c.ErrMsg(ctx, err)
 		return
 	}
-	c.OkData(ctx, plugins)
+	apps := make([]installedAppInfo, 0, len(plugins))
+	for _, item := range plugins {
+		apps = append(apps, installedPluginAppInfo(item))
+	}
+	c.OkData(ctx, apps)
 }
 
 func normalizeStoreAppInfo(code string, appInfo *store.AppInfo) {
@@ -666,6 +820,30 @@ func normalizeStoreAppInfo(code string, appInfo *store.AppInfo) {
 		appInfo.Code = code
 	}
 	appInfo.Installable, appInfo.InstallReason = storeAppInstallability(appInfo)
+}
+
+func installedPluginAppInfo(pluginModel plugin.Plugin) installedAppInfo {
+	return installedAppInfo{
+		Code:             pluginModel.Code,
+		Name:             pluginModel.Name,
+		Description:      pluginModel.Description,
+		IconUrl:          pluginModel.IconUrl,
+		Version:          pluginModel.Version,
+		PluginType:       pluginModel.PluginType,
+		LimitVersion:     pluginModel.LimitVersion,
+		Installed:        true,
+		InstalledVersion: pluginModel.Version,
+		Runtime:          pluginRuntimeInfo(pluginModel),
+	}
+}
+
+func pluginRuntimeInfo(pluginModel plugin.Plugin) *installedAppRuntime {
+	if pluginModel.PluginType != 4 || strings.TrimSpace(pluginModel.AccessUrl) == "" {
+		return nil
+	}
+	return &installedAppRuntime{
+		AccessUrl: strings.TrimSpace(pluginModel.AccessUrl),
+	}
 }
 
 func mergeLocalPluginAppInfo(appInfo *store.AppInfo, pluginModel plugin.Plugin) {
@@ -681,44 +859,14 @@ func mergeLocalPluginAppInfo(appInfo *store.AppInfo, pluginModel plugin.Plugin) 
 	if pluginModel.IconUrl != "" {
 		appInfo.IconUrl = pluginModel.IconUrl
 	}
-	if pluginModel.Remark != "" {
-		appInfo.Remark = pluginModel.Remark
-	}
 	if pluginModel.Version != "" {
 		appInfo.Version = pluginModel.Version
 	}
 	if pluginModel.PluginType != 0 {
 		appInfo.PluginType = pluginModel.PluginType
 	}
-	if pluginModel.RuntimeError != "" {
-		appInfo.RuntimeError = pluginModel.RuntimeError
-	}
 	if pluginModel.LimitVersion != "" {
 		appInfo.LimitVersion = pluginModel.LimitVersion
-	}
-	if pluginModel.FirstMachine != "" {
-		appInfo.FirstMachine = pluginModel.FirstMachine
-	}
-	if pluginModel.CloseDelay != 0 {
-		appInfo.CloseDelay = pluginModel.CloseDelay
-	}
-	if pluginModel.Status != 0 {
-		appInfo.Status = pluginModel.Status
-	}
-	if pluginModel.NeedLogin != 0 {
-		appInfo.NeedLogin = pluginModel.NeedLogin
-	}
-	if pluginModel.Interceptors != "" {
-		appInfo.Interceptors = pluginModel.Interceptors
-	}
-	if pluginModel.WebHook != "" {
-		appInfo.WebHook = pluginModel.WebHook
-	}
-	if pluginModel.AccessUrl != "" {
-		appInfo.AccessUrl = pluginModel.AccessUrl
-	}
-	if pluginModel.DebugPort != 0 {
-		appInfo.DebugPort = pluginModel.DebugPort
 	}
 }
 
@@ -749,9 +897,6 @@ func storeAppInstallability(appInfo *store.AppInfo) (bool, string) {
 		return false, "plugin not found"
 	}
 	if appInfo.PluginType == 4 {
-		if strings.TrimSpace(appInfo.AccessUrl) == "" {
-			return false, "远程应用访问地址不能为空"
-		}
 		return true, ""
 	}
 	os, arch := storeCurrentTarget(appInfo.PluginType)
@@ -763,9 +908,6 @@ func storeAppInstallabilityForTarget(appInfo *store.AppInfo, os string, arch str
 		return false, "plugin not found"
 	}
 	if appInfo.PluginType == 4 {
-		if strings.TrimSpace(appInfo.AccessUrl) == "" {
-			return false, "远程应用访问地址不能为空"
-		}
 		return true, ""
 	}
 	if appInfo.PluginType == 2 {

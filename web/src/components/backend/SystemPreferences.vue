@@ -8,7 +8,7 @@ const props = defineProps({ winId: { type: String, default: "" } });
 const navIconSize = 28;
 
 const ProfileTab = defineAsyncComponent(
-  () => import("@/components/common/modules/settings/ProfileTab.vue"),
+  () => import("@/components/common/component/user/profile/profile.vue"),
 );
 const PersonalizeTab = defineAsyncComponent(
   () => import("@/components/common/modules/settings/PersonalizeTab.vue"),

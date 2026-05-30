@@ -4,7 +4,7 @@ import { getWinSize } from "@/util/util.js";
 import { useStore } from "@/stores/user.js";
 import emitter from "@/util/event.js";
 import { openDesktopShortcutWin } from "@/components/common/modules/desktop/shortcut.js";
-import IconView from "@/components/common/IconView.vue";
+import IconView from "@/components/common/component/util/IconView.vue";
 import { SettingOutlined, SkinOutlined, UserOutlined } from "@vicons/antd";
 import { renderIcon } from "@/util/icon";
 
@@ -142,7 +142,7 @@ const openProfileTab = () => {
     title: $tc("backend.layout.profile"),
     icon: profileIcon,
     component: defineAsyncComponent(
-      () => import("@/components/common/modules/settings/ProfileTab.vue"),
+      () => import("@/components/common/component/user/profile/profile.vue"),
     ),
     data: {},
   });

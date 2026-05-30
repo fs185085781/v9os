@@ -1,8 +1,9 @@
 <script setup>
 import { reactive, computed, onMounted, ref } from "vue";
 import { NSpace, NButton, NSelect, NSwitch, NInput, NSlider } from "naive-ui";
-import { postData } from "@/util/util";
-const tmdsz = ['win10','macos','deepin'];
+import SingleSelectFile from "@/components/common/component/util/SingleSelectFile.vue";
+import { postData,absoluteUrl } from "@/util/util";
+const tmdsz = ['win10', 'macos', 'deepin'];
 const settings = $user.settings;
 const lastMode = settings.Mode;
 const colorOptions = computed(() => [
@@ -145,7 +146,7 @@ function setLang(lang) {
 }
 
 function setMode(mode) {
-  $user.setUiMode(mode, true,lastMode);
+  $user.setUiMode(mode, true, lastMode);
 }
 
 function setTheme(dark) {
@@ -180,7 +181,7 @@ const wallpaperInput = reactive({
 });
 
 function setWallpaper(url, type) {
-  $user.setWallpaper(url,type,true);
+  $user.setWallpaper(url, type, true);
 }
 
 function setCustomWallpaper() {
@@ -188,7 +189,7 @@ function setCustomWallpaper() {
     setWallpaper(wallpaperInput.url, wallpaperInput.type);
   }
 }
-function restoreDefaultWallpaper(){
+function restoreDefaultWallpaper() {
   wallpaperInput.url = "default"
   wallpaperInput.type = "image"
 }
@@ -201,12 +202,7 @@ function restoreDefaultWallpaper(){
       <div class="font-600 mb-2 user-color-ftext">
         {{ $t("model.user_settings.mode") }}
       </div>
-      <n-select
-        :value="settings.Mode"
-        :options="modeOptions"
-        class="w-50"
-        @update:value="setMode"
-      />
+      <n-select :value="settings.Mode" :options="modeOptions" class="w-50" @update:value="setMode" />
     </div>
 
     <!-- 主题色 -->
@@ -215,31 +211,21 @@ function restoreDefaultWallpaper(){
         {{ $t("model.user_settings.color") }}
       </div>
       <div class="flex flex-wrap gap-2">
-        <div
-          v-for="c in colorOptions.filter((o) => o.color)"
-          :key="c.value"
-          @click="setColor(c.value)"
-          class="w-8 h-8 rounded-full cursor-pointer transition-all"
-          :style="{
+        <div v-for="c in colorOptions.filter((o) => o.color)" :key="c.value" @click="setColor(c.value)"
+          class="w-8 h-8 rounded-full cursor-pointer transition-all" :style="{
             backgroundColor: c.color,
             border:
               settings.Color === c.value
                 ? '3px solid var(--n-text-color, #333)'
                 : '2px solid transparent',
-          }"
-          :title="c.label"
-        />
+          }" :title="c.label" />
       </div>
       <n-space class="mt-2" align="center">
-        <n-input
-          v-model:value="diyColor.value"
-          :placeholder="$t('model.user_settings.color_desc')"
-          class="w-55"
-          size="small"
-        />
+        <n-input v-model:value="diyColor.value" :placeholder="$t('model.user_settings.color_desc')" class="w-55"
+          size="small" />
         <n-button size="small" @click="setDiyColor">{{
           $t("common.all.save")
-        }}</n-button>
+          }}</n-button>
       </n-space>
     </div>
 
@@ -248,12 +234,7 @@ function restoreDefaultWallpaper(){
       <div class="font-600 mb-2 user-color-ftext">
         {{ $t("model.user_settings.lang") }}
       </div>
-      <n-select
-        :value="settings.Lang"
-        :options="langOptions"
-        class="w-50"
-        @update:value="setLang"
-      />
+      <n-select :value="settings.Lang" :options="langOptions" class="w-50" @update:value="setLang" />
     </div>
 
     <!-- 深色模式 -->
@@ -264,10 +245,10 @@ function restoreDefaultWallpaper(){
       <n-switch :value="isDark" @update:value="setTheme">
         <template #checked>{{
           $t("model.user_settings.theme_select_dark")
-        }}</template>
+          }}</template>
         <template #unchecked>{{
           $t("model.user_settings.theme_select_light")
-        }}</template>
+          }}</template>
       </n-switch>
     </div>
 
@@ -279,30 +260,24 @@ function restoreDefaultWallpaper(){
       <n-switch :value="isRound" @update:value="setRound">
         <template #checked>{{
           $t("model.user_settings.round_select_true")
-        }}</template>
+          }}</template>
         <template #unchecked>{{
           $t("model.user_settings.round_select_false")
-        }}</template>
+          }}</template>
       </n-switch>
     </div>
 
     <div class="mb-6" v-if="tmdsz.includes(settings.Mode)">
       <div class="font-600 mb-2 user-color-ftext">透明度</div>
       <n-space align="center" class="mt-2">
-        <n-slider
-          :value="transparentInput.value"
-          class="w-70"
-          :min="0"
-          :max="100"
-          :step="1"
-          @update:value="(value) => setTransparent(value, false)"
-        />
+        <n-slider :value="transparentInput.value" class="w-70" :min="0" :max="100" :step="1"
+          @update:value="(value) => setTransparent(value, false)" />
         <span class="w-10 text-center text-sm user-color-ftext">
           {{ transparentInput.value }}%
         </span>
         <n-button size="small" @click="setTransparent(transparentInput.value, true)">{{
           $t("common.all.save")
-        }}</n-button>
+          }}</n-button>
       </n-space>
     </div>
 
@@ -311,12 +286,7 @@ function restoreDefaultWallpaper(){
       <div class="font-600 mb-2 user-color-ftext">
         {{ $t("model.user_settings.font") }}
       </div>
-      <n-select
-        :value="settings.Font"
-        :options="fontOptions"
-        class="w-50"
-        @update:value="setFont"
-      />
+      <n-select :value="settings.Font" :options="fontOptions" class="w-50" @update:value="setFont" />
     </div>
 
     <!-- 壁纸 -->
@@ -325,25 +295,26 @@ function restoreDefaultWallpaper(){
         {{ $t("model.user_settings.default_wallpaper") }}
       </div>
       <n-space align="center" class="mt-2">
-        <n-input
-          v-model:value="wallpaperInput.url"
-          :placeholder="$t('model.user_settings.default_wallpaper')"
-          class="w-75"
-          size="small"
-        />
-        <n-select
-          v-model:value="wallpaperInput.type"
-          :options="wallpaperTypeOptions"
-          class="w-25"
-          size="small"
-        />
+        <n-input v-model:value="wallpaperInput.url" :placeholder="$t('model.user_settings.default_wallpaper')" class="w-75" size="small" />
+        <SingleSelectFile size="small" scene="wallpaper" accept=".jpg,.jpeg,.png,.mp4" :val="wallpaperInput.url"
+          :onlybtn="true" @change="(p) => wallpaperInput.url = p" />
+        <n-select v-model:value="wallpaperInput.type" :options="wallpaperTypeOptions" class="w-25" size="small" />
         <n-button size="small" @click="restoreDefaultWallpaper">{{
           $t("common.settings.restore_default")
-        }}</n-button>
+          }}</n-button>
         <n-button size="small" @click="setCustomWallpaper">{{
           $t("common.all.save")
-        }}</n-button>
+          }}</n-button>
       </n-space>
+      <div class="mt-2">
+        <img v-if="wallpaperInput.type == 'image' && wallpaperInput.url == 'default'"
+          class="max-w-[200px] max-h-[100px] object-cover border user-color-border user-rounded-lg" :src="absoluteUrl('/assets/'+$user.settings.Mode+'/img/wallpaper.jpg')" />
+        <img v-else-if="wallpaperInput.type == 'image' && wallpaperInput.url"
+          class="max-w-[200px] max-h-[100px] object-cover border user-color-border user-rounded-lg" :src="absoluteUrl(wallpaperInput.url)" />
+        <video v-if="wallpaperInput.type == 'video' && wallpaperInput.url"
+          class="max-w-[200px] max-h-[100px] object-cover border user-color-border user-rounded-lg" :src="absoluteUrl(wallpaperInput.url)" autoplay
+          muted loop></video>
+      </div>
     </div>
   </div>
 </template>

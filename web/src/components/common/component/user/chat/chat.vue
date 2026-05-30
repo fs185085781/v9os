@@ -9,6 +9,7 @@ if (mod) {
   EnterpriseChat = defineAsyncComponent(mod);
 }
 
+
 const props = defineProps({
   data: {},
   winId: {
@@ -82,7 +83,6 @@ onBeforeUnmount(() => {
     <header class="h-16 flex items-center justify-between border-b user-color-line px-4.5">
       <div>
         <div class="text-16px font-600">系统通知</div>
-        <div class="mt-0.5 text-12px user-color-muted">无企业模块时聊天中心仅显示系统通知</div>
       </div>
       <n-button size="small" @click="loadNotices">刷新</n-button>
     </header>

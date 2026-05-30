@@ -13,7 +13,6 @@ type FeatureAuth struct {
 	ProductName string     `json:"productName,omitempty"`
 	Expired     *time.Time `json:"expired,omitempty"`
 	Times       int64      `json:"times,omitempty"`
-	PublicKey   string     `json:"publicKey,omitempty"`
 	AuthCipher  string     `json:"authCipher,omitempty"`
 }
 
@@ -108,6 +107,9 @@ type LicensePaymentStatus struct {
 
 type LicenseAuthCipher struct {
 	AuthID     string `json:"authId"`
+	EndAt      int64  `json:"endAt"`
+	AuthType   string `json:"authType,omitempty"`
+	Value      string `json:"value,omitempty"`
 	AuthCipher string `json:"authCipher"`
 }
 

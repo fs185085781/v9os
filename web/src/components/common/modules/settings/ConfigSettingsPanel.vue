@@ -4,7 +4,7 @@
  * 通过 API 读写系统配置，走 ioc 保证分布式一致性
  */
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { postData, getApiHost } from "@/util/util";
+import { postData,absoluteUrl } from "@/util/util";
 import { NSwitch, NInput, NInputNumber, NSelect, NButton } from "naive-ui";
 
 const loading = ref(false);
@@ -36,14 +36,13 @@ async function saveConfig() {
   saving.value = false;
   if (res && res.restart) {
     $msg.message.info($t("common.settings.restarting"));
-    const host = await getApiHost();
     if (restartDelayTimer) clearTimeout(restartDelayTimer);
     restartDelayTimer = setTimeout(() => {
       const start = Date.now();
       if (healthTimer) clearInterval(healthTimer);
       healthTimer = setInterval(async () => {
         try {
-          const r = await fetch(`${host}/health`, { method: "GET" });
+          const r = await fetch(absoluteUrl(`/health`), { method: "GET" });
           if (r.ok) {
             clearInterval(healthTimer);
             healthTimer = null;

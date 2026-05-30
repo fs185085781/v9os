@@ -97,5 +97,5 @@ const layerStyle = computed(() => {
     class="v9os-glass-layer pointer-events-none"
     :class="radiusClass"
     :style="layerStyle"
-  />
+  ></div>
 </template>

@@ -18,7 +18,8 @@ import (
 )
 
 type dbLog struct {
-	log logger.Logger
+	log     logger.Logger
+	showSql bool
 }
 
 func (l *dbLog) LogMode(level gormLog.LogLevel) gormLog.Interface {
@@ -36,10 +37,14 @@ func (l *dbLog) Error(ctx context.Context, msg string, data ...interface{}) {
 func (l *dbLog) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	sql, rowsAffected := fc()
 	l.log.Debug(sql, logger.NewField("rowsAffected", rowsAffected))
+	if l.showSql {
+		fmt.Printf("[%s] %s -> %d \n", time.Now().Format("2006-01-02 15:04:05"), sql, rowsAffected)
+	}
 }
 func NewDatabase(cfg *config.DatabaseConfig, c cache.Cache, tmpLog logger.Logger) (Database, error) {
 	log := &dbLog{
-		log: tmpLog,
+		log:     tmpLog,
+		showSql: cfg.ShowSql,
 	}
 	if len(cfg.DSN) < 1 {
 		return nil, errors.New("配置中暂未发现数据库连接串")
@@ -102,7 +107,7 @@ func newOneDb(cfg *config.DatabaseConfig, c *gromCache, dsn string, log *dbLog) 
 	if !cfg.SoftDelete {
 		db = db.Unscoped()
 	}
-	if cfg.Cache {
+	if cfg.Cache && !cfg.ShowSql {
 		c.registerCallback(db)
 	}
 	return db, nil

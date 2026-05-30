@@ -5,10 +5,25 @@ import (
 	"runtime"
 
 	"github.com/fs185085781/v9os/internal/ioc"
+	"github.com/gin-gonic/gin"
 )
 
 type DefaultProvider struct {
 	ctx RuntimeContext
+}
+
+func (d *DefaultProvider) GetMachineIds(pluginCode string) []string {
+	return []string{
+		d.LocalMachineID(),
+	}
+}
+
+func (d *DefaultProvider) GetNodesAuth() int64 {
+	return 1
+}
+
+func (d *DefaultProvider) ProxyByMachineWhitelist(ctx *gin.Context, pluginCode string) bool {
+	return false
 }
 
 func NewDefaultProvider() *DefaultProvider {

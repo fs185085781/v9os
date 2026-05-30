@@ -13,6 +13,7 @@ type Lock interface {
 	TryLock() bool
 	WithLock(fn func())
 	GetVal() string
+	IsAlive() bool
 }
 
 type Cache interface {

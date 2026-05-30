@@ -38,7 +38,7 @@ const wallPaper = computed(
       muted
       loop
     ></video>
-    <div class="inline-block w-auto relative top-1/2 -mt-40 border-2 p-5 user-rounded-5 user-color-border">
+    <div class="inline-block w-auto relative top-1/2 -mt-40 border-2 p-5 user-rounded-5 border-white/40">
       <img
         class="rounded-full w-24 h-24 my-0 mx-auto"
         :src="$user.webSettings.Logo"

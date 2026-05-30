@@ -58,11 +58,14 @@ func init() {
 }
 
 type moduleInfo struct {
-	Code      string `json:"code"`
-	Name      string `json:"name"`
-	Icon      string `json:"icon"`
-	Type      int    `json:"type"`
-	AccessUrl string `json:"accessUrl"`
+	Code       string `json:"code"`
+	Name       string `json:"name"`
+	Icon       string `json:"icon"`
+	Type       int    `json:"type"`
+	AccessUrl  string `json:"accessUrl"`
+	OpenExts   string `json:"openExts"`
+	EditExts   string `json:"editExts"`
+	ExpandExts string `json:"expandExts"`
 }
 
 func (c *UserController) AuthModules(ctx *gin.Context) {
@@ -78,11 +81,14 @@ func (c *UserController) AuthModules(ctx *gin.Context) {
 	for _, item := range ps {
 		if _, exists := modMap[item.Code]; !exists {
 			modMap[item.Code] = moduleInfo{
-				Code:      item.Code,
-				Name:      item.Name,
-				Type:      item.PluginType,
-				Icon:      item.IconUrl,
-				AccessUrl: item.AccessUrl,
+				Code:       item.Code,
+				Name:       item.Name,
+				Type:       item.PluginType,
+				Icon:       item.IconUrl,
+				AccessUrl:  item.AccessUrl,
+				OpenExts:   item.OpenExts,
+				EditExts:   item.EditExts,
+				ExpandExts: item.ExpandExts,
 			}
 		}
 	}

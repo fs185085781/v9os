@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -175,31 +176,8 @@ func (m *thirdPluginManage) Uninstall(pluginModel plugin.Plugin) error {
 	return m.common.deletePluginModel(pluginModel.Code)
 }
 
-func (m *thirdPluginManage) canRunHere(pluginModel plugin.Plugin) bool {
-	if distributedProvider, ok := ioc.Ioc().Get(ioc.KeyDistributedProvider).(distributed.DistributedProvider); ok && distributedProvider.Enabled() {
-		return uioc.MachineAllowedPluginMap()[strings.TrimSpace(m.cfg.Machine().MachineId)][strings.TrimSpace(pluginModel.Code)]
-	}
-	if pluginModel.FirstMachine == "" {
-		return true
-	}
+func (m *thirdPluginManage) hasRunHere(pluginModel plugin.Plugin) bool {
 	return pluginModel.FirstMachine == m.cfg.Machine().MachineId
-}
-
-func pluginCodeAllowedByMachine(raw string, pluginCode string) bool {
-	raw = strings.TrimSpace(raw)
-	if raw == "" || raw == "null" {
-		return false
-	}
-	var codes []string
-	if err := json.Unmarshal([]byte(raw), &codes); err != nil {
-		return false
-	}
-	for _, code := range codes {
-		if strings.TrimSpace(code) == pluginCode {
-			return true
-		}
-	}
-	return false
 }
 
 func (m *thirdPluginManage) checkPluginClose() {
@@ -331,7 +309,7 @@ func (m *thirdPluginManage) PluginHost(pluginName string, ctx *gin.Context) (str
 	if accessURL == "" {
 		return "", fmt.Errorf("third plugin access url not found")
 	}
-	if m.canRunHere(*pluginModel) {
+	if m.hasRunHere(*pluginModel) {
 		infoAny, _ := m.pluginMap.LoadOrStore(pluginName, &thirdPluginInfo{})
 		info := infoAny.(*thirdPluginInfo)
 		if m.isProcessRunning(info.cmd) {
@@ -409,7 +387,8 @@ func (m *thirdPluginManage) PluginHost(pluginName string, ctx *gin.Context) (str
 		return accessURL, nil
 	}
 	distributedProvider := ioc.Ioc().Get(ioc.KeyDistributedProvider).(distributed.DistributedProvider)
-	if distributedProvider.Enabled() {
+	machineIDs := distributedProvider.Nodes().GetMachineIds(pluginName)
+	if !slices.Contains(machineIDs, m.cfg.Machine().MachineId) {
 		err := fmt.Errorf("current machine is not allowed to run third plugin: %s", pluginName)
 		m.setRuntimeError(pluginName, err)
 		return "", err
@@ -417,9 +396,6 @@ func (m *thirdPluginManage) PluginHost(pluginName string, ctx *gin.Context) (str
 	machineID := strings.TrimSpace(pluginModel.FirstMachine)
 	if machineID == "" {
 		return "", fmt.Errorf("third plugin install machine not found")
-	}
-	if !distributedProvider.Enabled() {
-		return "", fmt.Errorf("distributed runtime is disabled")
 	}
 	host, ok := distributedProvider.Nodes().Resolve(machineID)
 	if !ok || strings.TrimSpace(host) == "" {
@@ -439,7 +415,7 @@ func (m *thirdPluginManage) PluginHost(pluginName string, ctx *gin.Context) (str
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusTemporaryRedirect {
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 		message := strings.TrimSpace(string(body))
 		if message == "" {
@@ -467,7 +443,7 @@ func (m *thirdPluginManage) Stop(code string) {
 	if err := db.Read().Where("code = ?", code).First(&pluginModel).Error; err != nil {
 		return
 	}
-	if !m.canRunHere(pluginModel) {
+	if !m.hasRunHere(pluginModel) {
 		return
 	}
 	_, stopPath := m.scriptPaths(code)
@@ -485,7 +461,7 @@ func (m *thirdPluginManage) Close(code string) error {
 	if err := db.Read().Where("code = ?", code).First(&pluginModel).Error; err != nil {
 		return nil
 	}
-	canRun := m.canRunHere(pluginModel)
+	canRun := m.hasRunHere(pluginModel)
 	if !canRun {
 		return nil
 	}

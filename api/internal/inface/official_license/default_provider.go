@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,7 +45,6 @@ type defaultFeatureJSON struct {
 	ProductName string `json:"productName,omitempty"`
 	Expired     int64  `json:"expired"`
 	Times       int64  `json:"times"`
-	PublicKey   string `json:"publicKey"`
 	AuthCipher  string `json:"authCipher"`
 }
 
@@ -65,7 +65,7 @@ func (d *DefaultProvider) AuthCipher(ctx context.Context, code string) (*License
 	if !ok {
 		return nil, ErrUnauthorized
 	}
-	if strings.TrimSpace(auth.PublicKey) == "" || strings.TrimSpace(auth.AuthCipher) == "" {
+	if strings.TrimSpace(auth.AuthCipher) == "" {
 		return nil, ErrUnauthorized
 	}
 	if auth.AuthType != "has" && auth.AuthType != "times" && auth.AuthType != "expired" {
@@ -73,6 +73,9 @@ func (d *DefaultProvider) AuthCipher(ctx context.Context, code string) (*License
 	}
 	return &LicenseAuthCipher{
 		AuthID:     snapshot.AuthID,
+		EndAt:      snapshot.EndAt,
+		AuthType:   auth.AuthType,
+		Value:      defaultFeatureValue(auth),
 		AuthCipher: auth.AuthCipher,
 	}, nil
 }
@@ -167,7 +170,6 @@ func (l defaultLicenseJSON) snapshot() *LicenseSnapshot {
 			AuthType:    item.AuthType,
 			ProductName: item.ProductName,
 			Times:       item.Times,
-			PublicKey:   item.PublicKey,
 			AuthCipher:  item.AuthCipher,
 		}
 		if item.Expired > 0 {
@@ -185,18 +187,18 @@ func (l defaultLicenseJSON) snapshot() *LicenseSnapshot {
 		features[code] = auth
 	}
 	return &LicenseSnapshot{
-		AuthID:        l.AuthID,
-		LastBatchID:   l.LastBatchID,
-		StartAt:       l.StartAt,
-		EndAt:         l.EndAt,
-		OfflineMonths: l.OfflineMonths,
-		Features:      features,
-		AuthKey:       l.AuthKey,
+		AuthID:           l.AuthID,
+		LastBatchID:      l.LastBatchID,
+		StartAt:          l.StartAt,
+		EndAt:            l.EndAt,
+		OfflineMonths:    l.OfflineMonths,
+		Features:         features,
+		AuthKey:          l.AuthKey,
 		LicensePublicKey: l.LicensePublicKey,
-		PublicKeySign: l.PublicKeySign,
-		LastSyncAt:    l.LastSyncAt,
-		NextSyncAt:    l.NextSyncAt,
-		SyncError:     l.SyncError,
+		PublicKeySign:    l.PublicKeySign,
+		LastSyncAt:       l.LastSyncAt,
+		NextSyncAt:       l.NextSyncAt,
+		SyncError:        l.SyncError,
 	}
 }
 
@@ -228,23 +230,22 @@ func defaultLicenseFromSnapshot(snapshot *LicenseSnapshot) defaultLicenseJSON {
 			ProductName: item.ProductName,
 			Expired:     expired,
 			Times:       item.Times,
-			PublicKey:   item.PublicKey,
 			AuthCipher:  item.AuthCipher,
 		}
 	}
 	return defaultLicenseJSON{
-		AuthID:        snapshot.AuthID,
-		LastBatchID:   snapshot.LastBatchID,
-		StartAt:       snapshot.StartAt,
-		EndAt:         snapshot.EndAt,
-		OfflineMonths: snapshot.OfflineMonths,
-		Features:      features,
-		AuthKey:       snapshot.AuthKey,
+		AuthID:           snapshot.AuthID,
+		LastBatchID:      snapshot.LastBatchID,
+		StartAt:          snapshot.StartAt,
+		EndAt:            snapshot.EndAt,
+		OfflineMonths:    snapshot.OfflineMonths,
+		Features:         features,
+		AuthKey:          snapshot.AuthKey,
 		LicensePublicKey: snapshot.LicensePublicKey,
-		PublicKeySign: snapshot.PublicKeySign,
-		LastSyncAt:    snapshot.LastSyncAt,
-		NextSyncAt:    snapshot.NextSyncAt,
-		SyncError:     snapshot.SyncError,
+		PublicKeySign:    snapshot.PublicKeySign,
+		LastSyncAt:       snapshot.LastSyncAt,
+		NextSyncAt:       snapshot.NextSyncAt,
+		SyncError:        snapshot.SyncError,
 	}
 }
 
@@ -265,6 +266,20 @@ func cloneDefaultSnapshot(snapshot *LicenseSnapshot) *LicenseSnapshot {
 		}
 	}
 	return &next
+}
+
+func defaultFeatureValue(auth FeatureAuth) string {
+	switch auth.AuthType {
+	case "has":
+		return "1"
+	case "times":
+		return strconv.FormatInt(auth.Times, 10)
+	case "expired":
+		if auth.Expired != nil {
+			return strconv.FormatInt(auth.Expired.Unix(), 10)
+		}
+	}
+	return ""
 }
 
 func initProvider() {

@@ -49,7 +49,8 @@
       "wakeup": "Wakeup",
       "click": "Click {key}",
       "poweron": "Power on",
-      "no": "No"
+      "no": "No",
+      "yes": "Yes"
     },
     "kernelUpgrade": {
       "currentVersion": "Current Version",
@@ -181,6 +182,7 @@
       "alwaysRunning": "Always running",
       "minutes": "{count} min",
       "installReasonFallback": "The current environment does not support installation",
+      "openFailed": "Unable to open remote app: access URL is missing",
       "listSeparator": ", ",
       "pluginTypes": {
         "main": "Main Plugin",
@@ -196,11 +198,9 @@
         "installedVersion": "Installed Version",
         "minHostVersion": "Minimum Host Version",
         "remark": "Remark",
-        "interceptors": "Interceptors",
         "debugPort": "Debug Port",
         "webhook": "WebHook",
         "closeDelay": "Close Delay",
-        "needLogin": "Login Required",
         "status": "Status",
         "firstMachine": "First Machine",
         "name": "Name",

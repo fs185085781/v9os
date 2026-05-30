@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -42,7 +41,7 @@ func init() {
 		BaseController: GetBaseController(),
 	}
 	//用于前端自动加载插件js
-	c.RegisterApi("POST", "/plugin/webhooks", c.WebHooks)
+	c.RegisterPublic("api", "POST", "/plugin/webhooks", c.WebHooks)
 	//主程序插件专用-代理插件前端
 	c.RegisterPublic("page", "GET", "/*filepath", c.PluginStream) //代理插件前端(不校验登陆)
 	//主程序插件专用-代理JSON请求
@@ -60,7 +59,7 @@ func init() {
 	//前端插件专用-用户数据读/写/删
 	c.RegisterPublic("api", "POST", "/webdata/:code/:method", c.WebPluginData)
 	//内部调用专用用于转发事件数据
-	c.RegisterPublic("pluginprivate", "POST", "/*filepath", c.PluginPrivatePost)
+	c.RegisterPublic("pluginPrivate", "POST", "/*filepath", c.PluginPrivatePost)
 	//插件调用专用-数据库操作
 	c.RegisterPublic("pluginExp", "POST", "/gorm/bridge", c.GormBridge)
 	//插件调用专用-数据库模型绑定
@@ -93,6 +92,8 @@ func init() {
 	c.RegisterPublic("pluginExp", "POST", "/data/set", c.DataSet)
 	//插件调用专用-内核配置
 	c.RegisterPublic("pluginExp", "POST", "/app/config", c.AppConfig)
+	//插件调用专用-获取自己的负载情况
+	c.RegisterPublic("pluginExp", "POST", "/distributed/whiteList", c.DistributedWhiteList)
 	//插件调用专用-商业授权密文
 	c.RegisterPublic("pluginExp", "POST", "/official_license/auth_cipher", c.OfficialLicenseAuthCipher)
 }
@@ -100,7 +101,7 @@ func init() {
 func (c *PluginController) WebHooks(ctx *gin.Context) {
 	var plugins []plugin.Plugin
 	err := c.Database().Read().
-		Where("plugin_type = ? AND status = ? AND web_hook <> ''", 1, 1).
+		Where("plugin_type in ? AND status = ? AND web_hook <> ''", []int{1, 2}, 1).
 		Find(&plugins).Error
 	if err != nil {
 		c.ErrMsg(ctx, err)
@@ -127,13 +128,13 @@ func resolvePluginWebhookURL(pluginModel plugin.Plugin) string {
 	if hook == "" {
 		return ""
 	}
-	if strings.HasPrefix(hook, "http://") || strings.HasPrefix(hook, "https://") || strings.HasPrefix(hook, "//") {
+	if strings.HasPrefix(hook, "http") || strings.HasPrefix(hook, "//") {
 		return hook
 	}
 	if strings.HasPrefix(hook, "/") {
 		return hook
 	}
-	return "/plugin/" + pluginModel.Code + "/" + strings.TrimPrefix(strings.TrimPrefix(hook, "./"), "/")
+	return "/" + hook
 }
 
 func (c *PluginController) EventSubscribe(ctx *gin.Context) {
@@ -162,7 +163,7 @@ func (c *PluginController) EventSubscribe(ctx *gin.Context) {
 	param := c.param(ctx)
 	event := param.ParamString("event")
 	method := param.ParamString("method")
-	url := "/pluginprivate/" + pluginName + "/" + method
+	url := "/pluginPrivate/" + pluginName + "/" + method
 	if stype == queue.StypeAbsoluteURL {
 		url = method
 	}
@@ -183,7 +184,7 @@ func (c *PluginController) EventUnsubscribe(ctx *gin.Context) {
 	param := c.param(ctx)
 	event := param.ParamString("event")
 	method := param.ParamString("method")
-	url := "/pluginprivate/" + pluginName + "/" + method
+	url := "/pluginPrivate/" + pluginName + "/" + method
 	err := c.Queue().Unsubscribe(event, url)
 	if err != nil {
 		c.ErrMsg(ctx, err)
@@ -318,73 +319,6 @@ func (c *PluginController) PluginPrivatePost(ctx *gin.Context) {
 	c.PluginStream(ctx)
 }
 
-const pluginMachineProxyHeader = "X-Plugin-Machine-Proxy"
-
-func (c *PluginController) proxyPluginByMachineWhitelist(ctx *gin.Context, pluginCode string, pluginType int) bool {
-	pluginCode = strings.TrimSpace(pluginCode)
-	if pluginCode == "" {
-		return false
-	}
-	distributedProvider := uioc.Get[distributed.DistributedProvider](ioc.KeyDistributedProvider)
-	if distributedProvider == nil || !distributedProvider.Enabled() {
-		return false
-	}
-	localMachineID := strings.TrimSpace(distributedProvider.Nodes().LocalMachineID())
-	if machineAllowsPluginInMemory(localMachineID, pluginCode) {
-		return false
-	}
-	if ctx.GetHeader(pluginMachineProxyHeader) != "" {
-		c.Log().Warn("plugin machine whitelist rejected proxied request", logger.NewField("pluginCode", pluginCode), logger.NewField("pluginType", pluginType), logger.NewField("machineId", localMachineID))
-		c.ErrCode(ctx, http.StatusForbidden, "current machine is not allowed to run plugin: "+pluginCode)
-		return true
-	}
-	host, err := c.resolvePluginMachineHost(distributedProvider, pluginCode, pluginType, localMachineID)
-	if err != nil {
-		c.Log().Warn("plugin machine whitelist proxy target not found", logger.NewField("pluginCode", pluginCode), logger.NewField("pluginType", pluginType), logger.NewField("machineId", localMachineID), logger.NewField("err", err))
-		c.ErrMsg(ctx, err)
-		return true
-	}
-	c.Log().Info("plugin request proxied by machine whitelist", logger.NewField("pluginCode", pluginCode), logger.NewField("pluginType", pluginType), logger.NewField("fromMachineId", localMachineID), logger.NewField("targetHost", host))
-	ctx.Request.Header.Set(pluginMachineProxyHeader, "1")
-	util.Proxy(ctx, "http://"+host)
-	return true
-}
-
-func machineAllowsPluginInMemory(machineID string, pluginCode string) bool {
-	machineID = strings.TrimSpace(machineID)
-	pluginCode = strings.TrimSpace(pluginCode)
-	if machineID == "" || pluginCode == "" {
-		return false
-	}
-	machineMap := uioc.MachineAllowedPluginMap()
-	if machineMap == nil {
-		return false
-	}
-	return machineMap[machineID][pluginCode]
-}
-
-func (c *PluginController) resolvePluginMachineHost(distributedProvider distributed.DistributedProvider, pluginCode string, pluginType int, localMachineID string) (string, error) {
-	_ = pluginType
-	candidates := make([]string, 0)
-	pluginMap := uioc.PluginAllowedMachineMap()
-	for machineID := range pluginMap[pluginCode] {
-		if strings.TrimSpace(machineID) == "" || machineID == localMachineID {
-			continue
-		}
-		host, ok := distributedProvider.Nodes().Resolve(machineID)
-		if ok && strings.TrimSpace(host) != "" {
-			candidates = append(candidates, host)
-		}
-	}
-	if len(candidates) == 0 {
-		return "", fmt.Errorf("plugin %s has no online allowed machine", pluginCode)
-	}
-	rand.Shuffle(len(candidates), func(i, j int) {
-		candidates[i], candidates[j] = candidates[j], candidates[i]
-	})
-	return candidates[0], nil
-}
-
 func (c *PluginController) PluginStream(ctx *gin.Context) {
 	distributedID := ctx.Request.Header.Get("Distributed-Id")
 	if distributedID != "" {
@@ -400,7 +334,7 @@ func (c *PluginController) PluginStream(ctx *gin.Context) {
 	}
 	arrs := strings.Split(ctx.Request.RequestURI, "/")
 	pluginName := arrs[2]
-	if c.proxyPluginByMachineWhitelist(ctx, pluginName, 1) {
+	if c.Distributed().Nodes().ProxyByMachineWhitelist(ctx, pluginName) {
 		return
 	}
 	host, err := c.PluginManage(1).PluginHost(pluginName, ctx)
@@ -416,7 +350,7 @@ func (c *PluginController) PluginStream(ctx *gin.Context) {
 		url = host + ctx.Request.RequestURI
 	case "stream":
 		url = host + strings.Join(append(arrs[:2], arrs[3:]...), "/")
-	case "plugin", "pluginprivate":
+	case "plugin", "pluginPrivate":
 		module = "plugin"
 		action = strings.Split(ctx.Request.URL.Path, "/")[3]
 		url = host + "/" + module + "/" + action
@@ -559,6 +493,64 @@ func (c *PluginController) GetSetRemoveDb(txId string, db *gorm.DB, isDelete boo
 		return nil, fmt.Errorf("db type error")
 	}
 	return ts.db, nil
+}
+
+func pluginSqlArgsToString(args []interface{}) []interface{} {
+	if len(args) == 0 {
+		return args
+	}
+	res := make([]interface{}, 0, len(args))
+	for _, arg := range args {
+		res = append(res, pluginSqlArgToString(arg))
+	}
+	return res
+}
+func pluginSqlArgToString(arg interface{}) interface{} {
+	if arg == nil {
+		return nil
+	}
+
+	value := reflect.ValueOf(arg)
+	if value.Kind() == reflect.Ptr {
+		if value.IsNil() {
+			return nil
+		}
+		value = value.Elem()
+		arg = value.Interface()
+	}
+
+	switch value.Kind() {
+	case reflect.Slice, reflect.Array:
+		list := make([]string, 0, value.Len())
+		for i := 0; i < value.Len(); i++ {
+			item := value.Index(i).Interface()
+			list = append(list, cast.ToString(item))
+		}
+		return list
+	default:
+		return cast.ToString(arg)
+	}
+}
+func pluginGormCondsToMain(columnNameMap map[string]*plugin.PluginColumn, args []interface{}) []interface{} {
+	if len(args) == 0 {
+		return args
+	}
+	res := make([]interface{}, len(args))
+	copy(res, args)
+
+	if sql, ok := res[0].(string); ok {
+		res[0] = pluginSqlToMain(columnNameMap, sql)
+		if len(res) > 1 {
+			tail := pluginSqlArgsToString(res[1:])
+			copy(res[1:], tail)
+		}
+		return res
+	}
+
+	for i := range res {
+		res[i] = pluginSqlArgToString(res[i])
+	}
+	return res
 }
 func (c *PluginController) GormBridge(ctx *gin.Context) {
 	resp := &GormBridgeResp{}
@@ -739,7 +731,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 				db = db.Where(entity)
 			} else {
 				//接字段和值,如"name = ?", "jinzhu" 已测试
-				db = db.Where(pluginSqlToMain(columnNameMap, step.Args[0]), args...)
+				db = db.Where(pluginSqlToMain(columnNameMap, step.Args[0]), pluginSqlArgsToString(args)...)
 			}
 		case "Select":
 			step.Args[0] = strings.Join(cast.ToStringSlice(step.Args[0]), " , ")
@@ -751,7 +743,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 			if args == nil {
 				db = db.Having(pluginSqlToMain(columnNameMap, step.Args[0]))
 			} else {
-				db = db.Having(pluginSqlToMain(columnNameMap, step.Args[0]), args...)
+				db = db.Having(pluginSqlToMain(columnNameMap, step.Args[0]), pluginSqlArgsToString(args)...)
 			}
 		case "Order":
 			db = db.Order(pluginSqlToMain(columnNameMap, step.Args[0]))
@@ -788,7 +780,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 			if args == nil {
 				db = db.Delete(entity)
 			} else {
-				db = db.Delete(entity, args...)
+				db = db.Delete(entity, pluginGormCondsToMain(columnNameMap, args)...)
 			}
 		case "First":
 			isEnd = true
@@ -796,7 +788,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 			if args == nil {
 				db = db.First(singleRes)
 			} else {
-				db = db.First(singleRes, args...)
+				db = db.First(singleRes, pluginGormCondsToMain(columnNameMap, args)...)
 			}
 		case "Take":
 			isEnd = true
@@ -804,7 +796,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 			if args == nil {
 				db = db.Take(singleRes)
 			} else {
-				db = db.Take(singleRes, args...)
+				db = db.Take(singleRes, pluginGormCondsToMain(columnNameMap, args)...)
 			}
 		case "Last":
 			isEnd = true
@@ -812,7 +804,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 			if args == nil {
 				db = db.Last(singleRes)
 			} else {
-				db = db.Last(singleRes, args...)
+				db = db.Last(singleRes, pluginGormCondsToMain(columnNameMap, args)...)
 			}
 		case "Find":
 			isEnd = true
@@ -820,7 +812,7 @@ func (c *PluginController) GormBridge(ctx *gin.Context) {
 			if args == nil {
 				db = db.Find(sliceRes)
 			} else {
-				db = db.Find(sliceRes, args...)
+				db = db.Find(sliceRes, pluginGormCondsToMain(columnNameMap, args)...)
 			}
 		case "Count":
 			isEnd = true
@@ -905,27 +897,30 @@ func mainListToPluginList(mainFieldNameMap map[string]*plugin.PluginColumn, list
 
 func pluginSqlToMain(columnNameMap map[string]*plugin.PluginColumn, sql interface{}) string {
 	sqlStr := strings.TrimSpace(cast.ToString(sql))
-	sqlStr = strings.ReplaceAll(sqlStr, "=", " = ")
-	sqlStr = strings.ReplaceAll(sqlStr, ">", " > ")
-	sqlStr = strings.ReplaceAll(sqlStr, "<", " < ")
-	sqlStr = strings.ReplaceAll(sqlStr, ">=", " >= ")
-	sqlStr = strings.ReplaceAll(sqlStr, "<=", " <= ")
-	sqlStr = strings.ReplaceAll(sqlStr, "<>", " <> ")
-	sqlStr = strings.ReplaceAll(sqlStr, "!=", " <> ")
-	sqlStr = strings.ReplaceAll(sqlStr, "(", " ) ")
-	sqlStr = strings.ReplaceAll(sqlStr, ")", " ) ")
-	for {
-		if strings.Contains(sqlStr, "  ") {
-			sqlStr = strings.ReplaceAll(sqlStr, "  ", " ")
-		} else {
-			break
-		}
+	sqlStr = strings.NewReplacer(
+		">=", " __OP_GTE__ ",
+		"<=", " __OP_LTE__ ",
+		"<>", " __OP_NE__ ",
+		"!=", " __OP_NE__ ",
+		"=", " = ",
+		">", " > ",
+		"<", " < ",
+		"(", " ( ",
+		")", " ) ",
+	).Replace(sqlStr)
+	for strings.Contains(sqlStr, "  ") {
+		sqlStr = strings.ReplaceAll(sqlStr, "  ", " ")
 	}
 	sqlStr = " " + sqlStr + " "
 	for k, v := range columnNameMap {
 		sqlStr = strings.ReplaceAll(sqlStr, " "+k+" ", " "+v.MainColumnName+" ")
 	}
 	sqlStr = strings.TrimSpace(sqlStr)
+	sqlStr = strings.NewReplacer(
+		"__OP_GTE__", ">=",
+		"__OP_LTE__", "<=",
+		"__OP_NE__", "<>",
+	).Replace(sqlStr)
 	return sqlStr
 }
 
@@ -1378,7 +1373,12 @@ func (c *PluginController) DataSet(ctx *gin.Context) {
 	c.Ok(ctx)
 }
 
+// 插件专用,私有
 type AppConfig struct {
+	DistributedEnabled bool              `json:"distributed_enabled"`
+	AllMachine         map[string]string `json:"all_machine"`
+	CurrentMachine     string            `json:"current_machine"`
+	CanRunMachines     []string          `json:"can_run_machine"`
 }
 
 func (c *PluginController) AppConfig(ctx *gin.Context) {
@@ -1387,7 +1387,21 @@ func (c *PluginController) AppConfig(ctx *gin.Context) {
 		c.FailMsg(ctx, "plugin not found")
 		return
 	}
-	c.OkData(ctx, &AppConfig{})
+
+	c.OkData(ctx, &AppConfig{
+		DistributedEnabled: c.Config().Distributed().Enabled,
+		AllMachine:         c.Distributed().Nodes().All(),
+		CurrentMachine:     c.Config().Machine().MachineId,
+		CanRunMachines:     c.Distributed().Nodes().GetMachineIds(pluginName),
+	})
+}
+
+func (c *PluginController) DistributedWhiteList(ctx *gin.Context) {
+	pluginName, _ := c.PluginManage(1).GetPluginName(ctx.Query("code"), ctx.Query("key"))
+	if pluginName == "" {
+		c.FailMsg(ctx, "plugin not found")
+		return
+	}
 }
 
 func (c *PluginController) OfficialLicenseAuthCipher(ctx *gin.Context) {
@@ -1422,7 +1436,7 @@ func (c *PluginController) ThirdPluginRun(ctx *gin.Context) {
 		c.FailMsg(ctx, "plugin not found")
 		return
 	}
-	if c.proxyPluginByMachineWhitelist(ctx, code, 3) {
+	if c.Distributed().Nodes().ProxyByMachineWhitelist(ctx, code) {
 		return
 	}
 	webHost := ctx.Query("host")
@@ -1514,7 +1528,7 @@ func (c *PluginController) WebPluginRun(ctx *gin.Context) {
 		c.ErrCode(ctx, 404, "plugin not found")
 		return
 	}
-	if c.proxyPluginByMachineWhitelist(ctx, code, 2) {
+	if c.Distributed().Nodes().ProxyByMachineWhitelist(ctx, code) {
 		return
 	}
 	if _, err := c.PluginManage(2).PluginHost(code, ctx); err != nil {

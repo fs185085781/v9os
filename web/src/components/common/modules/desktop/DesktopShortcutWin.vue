@@ -18,7 +18,7 @@ const ws = windowsStore();
 const form = reactive({
   ID: props.data.ID || props.data.id || 0,
   Title: props.data.Title || "",
-  Icon: props.data.Icon || $user.defaultIcon("appstore"),
+  Icon: props.data.Icon,
   AppType: props.data.AppType || "iframe",
   Code: props.data.Code || "",
   Url: props.data.Url || "",
